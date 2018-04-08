@@ -1,0 +1,91 @@
+---
+title: "When and How you should write a function"
+output: html_notebook
+---
+
+# When and How to Write a Function
+
+## Rescale
+
+```{r, eval =FALSE}
+
+# Define example vector x
+
+x=(1:10)
+
+# Rewrite this snippet to refer to x
+(df$a - min(df$a, na.rm = TRUE)) /
+  (max(df$a, na.rm = TRUE) - min(df$a, na.rm = TRUE))
+  
+  (x-min(x,na.rm=TRUE))/(max(x,na.rm=TRUE)-min(x,na.rm=TRUE))
+
+
+
+
+```
+
+##Replace it with Range Function
+
+```{r, eval=FALSE}
+
+# Define example vector x
+x <- 1:10
+
+# Define rng
+
+rng = range(x, na.rm = TRUE)
+
+# Rewrite this snippet to refer to the elements of rng
+(x - min(x, na.rm = TRUE)) /
+  (max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
+  
+  ## Rewrite
+  
+  (x-min(x,na.rm=TRUE))/rng
+
+```
+
+
+## Finally turn it into a function!
+
+```{r,eval=FALSE}
+
+# Define example vector x
+x <- 1:10 
+
+# Use the function template to create the rescale01 function
+my_fun <- function(arg1, arg2) {
+  # body
+  
+}
+
+# Test your function, call rescale01 using the vector x as the argument
+
+rescale01<-function(x){
+  
+  rng <- range(x, na.rm = TRUE)
+  (x - rng[1]) / (rng[2] - rng[1])
+}
+
+
+```
+
+## When and How to write a function
+### Start with a simple problem
+
+```{r, eval=FALSE}
+
+# Define example vectors x and y
+x <- c( 1, 2, NA, 3, NA)
+y <- c(NA, 3, NA, 3,  4)
+
+# Count how many elements are missing in both x and y
+
+sum(is.na(x) & is.na(y))
+```
+
+
+
+
+
+
