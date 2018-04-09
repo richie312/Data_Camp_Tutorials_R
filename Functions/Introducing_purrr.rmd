@@ -1,0 +1,54 @@
+---
+title: "Introducing Purrr"
+output: html_notebook
+---
+
+# Introducing purrr package
+
+```{r}
+##There is one function for each type of vector
+
+map() ## returns a list
+
+map_dbl() # returns a double vector
+
+map_lgl() # returns a logical vector
+
+map_int() # returns a integer vector
+
+map_chr() # returns a character vector 
+
+```
+
+## Map Functions
+
+```{r, eval = FALSE}
+
+# Load the purrr package
+library(purrr)
+
+# Use map_dbl() to find column means
+ map_dbl(df, mean)
+
+# Use map_dbl() to column medians
+map_dbl(df, median)
+
+# Use map_dbl() to find column standard deviations
+map_dbl(df, sd)
+
+
+# Find the mean of each column
+map_dbl(planes, mean)
+
+# Find the mean of each column, excluding missing values
+map_dbl(planes, mean,na.rm = TRUE)
+
+# Find the 5th percentile of each column, excluding missing values
+map_dbl(planes, quantile, prob = 0.05,na.rm = TRUE)
+
+
+
+```
+
+
+

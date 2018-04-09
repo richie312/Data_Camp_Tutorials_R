@@ -84,6 +84,191 @@ y <- c(NA, 3, NA, 3,  4)
 sum(is.na(x) & is.na(y))
 ```
 
+## Turn the above snippet into function
+
+```{r, eval = FALSE}
+
+# Define example vectors x and y
+x <- c( 1, 2, NA, 3, NA)
+y <- c(NA, 3, NA, 3,  4)
+
+# Turn this snippet into a function: both_na()
+both_na=function(x,y){
+  sum(is.na(x) & is.na(y))
+}
+both_na(x,y)
+
+```
+
+
+## Put our function to use
+
+```{r, eval = FALSE}
+
+# Define x, y1 and y2
+x <-  c(NA, NA, NA)
+y1 <- c( 1, NA, NA)
+y2 <- c( 1, NA, NA, NA)
+
+# Call both_na on x, y1
+
+both_na(x,y1)
+# Call both_na on x, y2
+both_na(x,y2)
+
+```
+
+
+## How can you write a good function
+
+### Good Function names
+
+```{r, eval =FALSE}
+
+mean_ci<-function(level,x){
+  se<-sd(x)/sqrt(length(x))
+  alpha<- 1 - level
+  mean(x) + se*qnorm(c(alpha/2,1-alpha/2))
+  
+```
+
+## Argument Order
+
+#### Put default value to the arguement
+
+```{r, eval =FALSE}
+
+mean_ci <- function(x, level = 0.95) {
+  se <- sd(x) / sqrt(length(x))
+  alpha <- 1 - level
+  mean(x) + se * qnorm(c(alpha / 2, 1 - alpha / 2))
+}
+```
+
+
+## Return Statements
+
+```{r, eval = FALSE}
+
+mean_ci <- function(x, level = 0.95) {
+  if (length(x) == 0){
+    warning("x was empty", call. = FALSE)
+    return(c(-Inf,Inf))} else {
+  se <- sd(x) / sqrt(length(x))
+  alpha <- 1 - level
+  mean(x) + se * qnorm(c(alpha / 2, 1 - alpha / 2))}
+}
+
+```
+
+## Replacement Funciton for missing values in a dataframe column
+
+```{r, eval = FALSE}
+
+# Rewrite the call on df$z to match our new names
+replace_missings <- function(x, replacement) {
+  # Change the name of the y argument to replacement
+  x[is.na(x)] <- replacement
+  cat(sum(is.na(x)), replacement, "\n")
+  x
+}
+
+df$z <- replace_missings(df$z, replacement = 0)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

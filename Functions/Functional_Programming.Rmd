@@ -1,0 +1,225 @@
+---
+title: "Functional Programming"
+author: "DataCamp"
+date: "9 April 2018"
+output: html_document
+---
+
+---
+title: "Functional Programming"
+output: html_notebook
+---
+
+# Functional Programming
+
+## Using a for loop to remove duplication
+
+### Store the output in a object and print them.
+
+```{r, eval =FALSE}
+
+# Initialize output vector
+output <- vector("double", ncol(df))  
+
+# Fill in the body of the for loop
+for (i in seq_along(df)) {   
+output[[i]]<-median(df[[i]])         
+print(output[[i]])
+  
+}
+
+# View the result
+output
+
+
+```
+
+## Turning the loop into a function (Loop for median)
+
+```{r, eval = FALSE}
+
+# Turn this code into col_median()
+output <- vector("double", ncol(df))
+
+col_median=function(df){
+for (i in seq_along(df)) {            
+  output[[i]] <- median(df[[i]])      
+}
+output
+}
+
+
+```
+
+## Loop for mean
+
+```{r, eval =FALSE}
+
+# Create col_mean() function to find column means
+col_mean <- function(df) {
+  output <- numeric(length(df))
+  for (i in seq_along(df)) {
+    output[[i]] <- mean(df[[i]])
+  }
+  output
+}
+
+```
+
+## Loop for sd
+
+```{r, eval = FALSE}
+
+# Define col_sd() function
+col_sd=function(df){
+  output<-vector("double", ncol(df))
+  for(i in seq_along(df)){
+    output[[i]]<- sd(df[[i]])
+    }
+    output
+}
+```
+
+## Functions can be arguement too!
+
+```{r, eval = FALSE}
+
+col_summary <- function(df, fun) {
+  output <- vector("numeric", length(df))
+  for (i in seq_along(df)) {
+    output[[i]] <- fun(df[[i]])
+  }
+  output
+}
+
+col_summary(df,median)
+
+col_summary(df, mean)
+
+col_summary(df,IQR)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
