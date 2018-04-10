@@ -1,0 +1,245 @@
+---
+title: "Advanced Input and Output"
+output: html_notebook
+---
+
+# Advanced Input Output
+
+## Dealing with failure
+
+### safely() takes a function and returns a function
+#### safely() captures the successful result or error, always returns a list
+#### possibly() always suceeds, you give it a default value to return when there is an error
+#### quietly() captures printed output, messages, warnings instead of capturing errors
+
+```{r, eval= FALSE}
+# Creating a safe function
+
+# Create safe_readLines() by passing readLines() to safely()
+
+safe_readLines<- safely(readLines)
+
+# Call safe_readLines() on "http://example.org"
+
+safe_readLines("http://example.org")
+
+# Call safe_readLines() on "http://asdfasdasdkfjlda"
+
+safe_readLines("http://asdfasdasdkfjlda")
+
+```
+
+## Using map safely
+
+```{r, eval =FALSE}
+
+# Define safe_readLines()
+safe_readLines <- safely(readLines)
+
+# Use the safe_readLines() function with map(): html
+
+html<- map(urls,safe_readLines)
+
+# Call str() on html
+
+str(html)
+
+# Extract the result from one of the successful elements
+
+html[["rproj"]][[1]]
+
+
+# Extract the error from the element that was unsuccessful
+
+html[["asdf"]][[2]]
+
+```
+
+
+
+## Using transpose function
+
+```{r, eval = FALSE}
+
+# Define save_readLines() and html
+safe_readLines <- safely(readLines)
+html <- map(urls, safe_readLines)
+
+# Examine the structure of transpose(html)
+
+str(transpose(html))
+
+# Extract the results: res
+
+res<- transpose(html)[["result"]]
+
+# Extract the errors: errs
+
+errs<- transpose(html)[["error"]]
+
+```
+
+## Working with errors and results
+
+```{r, eval = FALSE}
+
+# Initialize some objects
+safe_readLines <- safely(readLines)
+html <- map(urls, safe_readLines)
+res <- transpose(html)[["result"]]
+errs <- transpose(html)[["error"]]
+
+# Create a logical vector is_ok
+is_ok <- map_lgl(errs, is_null)
+
+# Extract the successful results
+res[is_ok]
+
+# Extract the input from the unsuccessful results
+urls[!is_ok]
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```

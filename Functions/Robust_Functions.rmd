@@ -1,0 +1,231 @@
+---
+title: "Robust Functions"
+output: html_notebook
+---
+
+## An Error is better than a surprise
+
+
+```{r, eval = FALSE}
+
+# Define troublesome x and y
+x <- c(NA, NA, NA)
+y <- c( 1, NA, NA, NA)
+
+both_na <- function(x, y) {
+  # Add stopifnot() to check length of x and y
+  stopifnot(length(x)==length(y),"Error")
+  
+  sum(is.na(x) & is.na(y))
+}
+
+# Call both_na() on x and y
+both_na(x, y)
+
+
+
+```
+
+## An informative error is even better
+
+```{r, eval=FALSE}
+# Define troublesome x and y
+x <- c(NA, NA, NA)
+y <- c( 1, NA, NA, NA)
+
+both_na <- function(x, y) {
+  # Replace condition with logical
+  if (length(x)!=length(y)) { 
+    # Replace "Error" with better message
+    stop("x and y must have the same length", call. = FALSE)
+  }  
+  
+  sum(is.na(x) & is.na(y))
+}
+
+# Call both_na() 
+both_na(x, y)
+
+
+```
+
+
+## A different kind of surprise: side effects
+##### Side effects describe the things that happen when you run a function that alters the state of your R session. If foo() is a function with no side effects (a.k.a. pure), then when we run x <- foo(), the only change we expect is that the variable x now has a new value. No other variables in the global environment should be changed or created, no output should be printed, no plots displayed, no files saved, no options changed. We know exactly the changes to the state of the session just by reading the call to the function.
+
+Can you identify which of these functions doesn't have side effects?
+
+```{r, eval = FALSE}
+
+
+show_missings <- function(x) {
+  n <- sum(is.na(x))
+  cat("Missing values: ", n, "\n", sep = "")
+  x
+}
+
+replace_missings <- function(x, replacement) {
+  x[is.na(x)] <- replacement
+  x
+}
+
+plot_missings <- function(x) {
+  plot(seq_along(x), is.na(x))
+  x
+}
+
+exclude_missings <- function() {
+  options(na.action = "na.exclude")
+}
+
+```
+
+##### Correct Answer is replace_missing()
+
+
+## Unstable Types
+
+### Suprise due to unstable types
+#### type inconsistent: The type of return object depend upon the input
+
+
+#####sapply is another common culprit. sapply() is another common offender returning unstable types. The type of output returned from sapply() depends on the type of input.Consider the following data frame and two calls to sapply():
+#####What type of objects will be A and B be?
+
+```{r, eval =FALSE}
+df <- data.frame(
+  a = 1L,
+  b = 1.5,
+  y = Sys.time(),
+  z = ordered(1)
+)
+
+A <- sapply(df[1:4], class) 
+B <- sapply(df[3:4], class)
+
+class(A)
+class(B)
+```
+
+## Using purrr solves the problem
+
+#### As map() will always returns list.
+
+```{r, eval =FALSE}
+
+# sapply calls
+A <- sapply(df[1:4], class) 
+B <- sapply(df[3:4], class)
+C <- sapply(df[1:2], class) 
+
+# Demonstrate type inconsistency
+str(A)
+str(B)
+str(C)
+
+# Use map() to define X, Y and Z
+
+X = map(df[1:4], class)
+Y = map(df[3:4], class)
+Z = map(df[1:2], class)
+
+
+# Use str() to check type consistency
+
+str(X)
+str(Y)
+str(Z)
+
+```
+
+
+## A type consistent solution
+
+```{r, eval = FALSE}
+
+col_classes <- function(df) {
+  # Assign list output to class_list
+  class_list<- map(df, class)
+  
+  # Use map_chr() to extract first element in class_list
+  map_chr(class_list, 1)
+}
+
+# Check that our new function is type consistent
+df %>% col_classes() %>% str()
+df[3:4] %>% col_classes() %>% str()
+df[1:2] %>% col_classes() %>% str()
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
