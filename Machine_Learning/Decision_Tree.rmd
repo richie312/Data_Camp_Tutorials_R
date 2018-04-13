@@ -1,0 +1,509 @@
+---
+title: "Decision Tree"
+output: html_notebook
+---
+
+# Decision Tree
+
+```{r, eval = FALSE}
+# The train and test set are loaded into your workspace.
+
+train
+test
+
+# Set random seed. Don't remove this line
+set.seed(1)
+
+# Load the rpart, rattle, rpart.plot and RColorBrewer package
+library(rpart)
+library(RColorBrewer)
+library(rpart.plot)
+library(rattle)
+
+# Fill in the ___, build a tree model: tree
+tree <- rpart(Survived~.,train, method = "class")
+
+# Draw the decision tree
+
+fancyRpartPlot(tree)
+
+```
+
+![Decision Node](D:/Documents/R_Projects/Data_Camp_Tutorials/Machine_Learning/tree.JPG)
+
+## Classifying with the decision tree
+
+```{r, eval = FALSE}
+
+# The train and test set are loaded into your workspace.
+
+# Code from previous exercise
+set.seed(1)
+library(rpart)
+tree <- rpart(Survived ~ ., train, method = "class")
+
+# Predict the values of the test set: pred
+pred<- predict(tree, test, type = "class")
+
+# Construct the confusion matrix: conf
+
+conf = table(test$Survived,pred)
+
+# Print out the accuracy
+
+print(sum(diag(conf))/sum(conf))
+
+```
+
+## Pruning the tree
+
+```{r, eval = FALSE}
+
+# All packages are pre-loaded, as is the data
+
+# Calculation of a complex tree
+set.seed(1)
+tree <- rpart(Survived ~ ., train, method = "class", control = rpart.control(cp=0.00001))
+
+# Draw the complex tree
+fancyRpartPlot(tree)
+
+# Prune the tree: pruned
+
+pruned<- prune(tree, cp = 0.01)
+# Draw pruned
+fancyRpartPlot(pruned)
+
+````
+
+
+![Decision Node](D:/Documents/R_Projects/Data_Camp_Tutorials/Machine_Learning/prune.JPG)
+
+## Interpreting the tree
+
+### A 25-year old man was in first class on the Titanic. Using the tree model that's shown on the right, it's your task to predict whether he survived the Titanic accident or not. Remember: 1 corresponds to survived, 0 corresponds to deceased.
+
+![Decision Node](D:/Documents/R_Projects/Data_Camp_Tutorials/Machine_Learning/man_survived_or_not.JPG)
+
+
+## Splitting Criterion: Gini Impurity and Information Gain
+
+
+```{r, eval = FALSE}
+
+# All packages, emails, train, and test have been pre-loaded
+
+# Set random seed. Don't remove this line.
+set.seed(1)
+
+# Train and test tree with gini criterion
+tree_g <- rpart(spam ~ ., train, method = "class")
+pred_g <- predict(tree_g, test, type = "class")
+conf_g <- table(test$spam, pred_g)
+acc_g <- sum(diag(conf_g)) / sum(conf_g)
+
+# Change the first line of code to use information gain as splitting criterion
+tree_i <- rpart(spam ~ ., train, method = "class", parms = list(split = "information"))
+pred_i <- predict(tree_i, test, type = "class")
+conf_i <- table(test$spam, pred_i)
+acc_i <- sum(diag(conf_i)) / sum(conf_i)
+
+# Draw a fancy plot of both tree_g and tree_i
+
+fancyRpartPlot(tree_g)
+fancyRpartPlot(tree_i)
+
+# Print out acc_g and acc_i
+print(acc_g)
+print(acc_i)
+
+```
+
+## Instance based learning
+
+** First the training set is saved in the memory
+
+** No notion of learning the model like decision tree
+
+** Compare the unseen instances to training set
+
+** Predict using the comparison of unseen data and the training set
+
+
+one of the method to compare is by using k nearest neighbour
+
+For instance there are 2 features X1 and X2 and classes are red and blue
+
+One unseen observation X:(1.3,-2). Our aim is to predict the class for the unseen observation.
+
+K-nearest neighbour model simply calculate the distances of each feature from the training features. It will classify the observation to that class with which its distance is lowest.
+
+#### Scaling Issue: With different scale of measurement the output might change. AS for instance 0.83 or 0.85 meters does not have much difference but when it is changed to cm then there is lot of difference
+
+One way to avoid this is by Normalisation i.e to rescale the values of the feature between 0 to 1.
+
+
+### Preprocess the Data
+
+```{r, eval = FALSE}
+
+# train and test are pre-loaded
+
+# Store the Survived column of train and test in train_labels and test_labels
+train_labels = train$Survived
+test_labels = test$Survived
+
+# Copy train and test to knn_train and knn_test
+
+knn_train= train
+knn_test = test
+
+# Drop Survived column for knn_train and knn_test
+knn_train<-knn_train[-1]
+knn_test<- knn_test[-1]
+
+
+# Normalize Pclass
+min_class <- min(knn_train$Pclass)
+max_class <- max(knn_train$Pclass)
+knn_train$Pclass <- (knn_train$Pclass - min_class) / (max_class - min_class)
+knn_test$Pclass <- (knn_test$Pclass - min_class) / (max_class - min_class)
+
+# Normalize Age
+min_age <- min(knn_train$Age)
+max_age <- max(knn_train$Age)
+knn_train$Age <- (knn_train$Age - min_age)/(max_age - min_age)
+knn_test$Age <- (knn_test$Age - min_age)/(max_age - min_age)
+
+
+```
+
+## Introducing knn() function
+
+```{r, eval = FALSE}
+
+# knn_train, knn_test, train_labels and test_labels are pre-loaded
+
+# Set random seed. Don't remove this line.
+set.seed(1)
+
+# Load the class package
+library(class)
+
+# Fill in the ___, make predictions using knn: pred
+pred <- knn(train = knn_train, test = knn_test, cl = train_labels, k = 5)
+
+# Construct the confusion matrix: conf
+
+conf<-table(test_labels, pred)
+
+# Print out the confusion matrix
+
+print(conf)
+
+```
+
+## K's Choice
+
+A big issue with k-Nearest Neighbors is the choice of a suitable k. How many neighbors should you use to decide on the label of a new observation? Let's have R answer this question for us and assess the performance of k-Nearest Neighbor classification for increasing values of k.
+
+
+```{r, eval = FALSE}
+
+# knn_train, knn_test, train_labels and test_labels are pre-loaded
+
+# Set random seed. Don't remove this line.
+set.seed(1)
+
+# Load the class package, define range and accs
+library(class)
+range <- 1:round(0.2 * nrow(knn_train))
+accs <- rep(0, length(range))
+
+for (k in range) {
+
+  # Fill in the ___, make predictions using knn: pred
+  pred <- knn(knn_train, knn_test, cl = train_labels, k = k)
+
+  # Fill in the ___, construct the confusion matrix: conf
+  conf <- table(test_labels, pred)
+
+  # Fill in the ___, calculate the accuracy and store it in accs[k]
+  accs[k] <- sum(diag(conf))/(sum(conf))
+}
+
+# Plot the accuracies. Title of x-axis is "k".
+plot(range, accs, xlab = "k")
+
+# Calculate the best k
+
+which.max(accs)
+
+```
+
+
+
+
+## The ROC Curve: 
+
+Receiver operating Characteristic: The ROC curve was first used during World War II for the analysis of radar signals before it was employed in signal detection theory.Following the attack on Pearl Harbor in 1941, the United States army began new research to increase the prediction of correctly detected Japanese aircraft from their radar signals. For this purposes they measured the ability of radar receiver operators to make these important distinctions, which was called the Receiver Operating Characteristics.
+Source: <https://en.wikipedia.org/wiki/Receiver_operating_characteristic>
+
+The main objective of the ROC plot is to get the threshold for which it helps the decision function to predict better. In other words, if threshold is 50% and if anything greater than means, that the patient is sick(for instance) or else not.
+
+What if the objective of the hospital is to send the les sick people to go home. IN order to acheive that threshold has to be lowered and say it is now 30%, which will definitely help hospital to acheive the goal but on the other hand it is also classifying healthy people as sick at the same time.
+
+In order to avoid this problem, the ROC plot helps to get the optimum threshold.
+
+#### ROC PLot
+
+ROC plot is the plot between the TPR(vertical) and FPR(horizontal)
+
+True Positive Rate is also known as the recall. The proportion of true cases out total true cases and can be written in the following manner.
+
+TP = TP/TP+FN
+
+
+False positive rate (1-TPR) is the proportion of false cases out of the total false cases and can be written in the follwoing manner,
+
+FP = FP/FP+TN
+
+![ROC Plot](D:/Documents/R_Projects/Data_Camp_Tutorials/Machine_Learning/ROC.JPG)
+
+
+#### How to Draw the Curve
+
+Need classfier which ouputs probabilities
+
+#### Interpreting the curve
+
+Closer to upper left corner is the better curve
+
+Area under the curve tells you about the quality of the classification model.
+
+The area like 0.905 is better signal for good classification model.
+
+## Creating the ROC
+
+```{r, eval = FALSE}
+
+
+# train and test are pre-loaded
+
+# Set random seed. Don't remove this line
+set.seed(1)
+
+# Build a tree on the training set: tree
+tree <- rpart(income ~ ., train, method = "class")
+
+# Predict probability values using the model: all_probs
+all_probs<- predict(tree, test, type = "prob")
+
+# Print out all_probs
+
+print(all_probs)
+
+
+# Select second column of all_probs: probs
+probs<- all_probs[,2]
+
+
+# train and test are pre-loaded
+
+# Code of previous exercise
+set.seed(1)
+tree <- rpart(income ~ ., train, method = "class")
+probs <- predict(tree, test, type = "prob")[,2]
+
+# Load the ROCR library
+library(ROCR)
+
+# Make a prediction object: pred
+
+pred<-prediction(probs,test$income)
+
+# Make a performance object: perf
+
+perf<- performance(pred, "tpr","fpr")
+
+# Plot this curve
+plot(perf)
+
+```
+
+
+## The area under the curve
+
+```{r, eval = FALSE}
+
+# test and train are loaded into your workspace
+
+# Build tree and predict probability values for the test set
+set.seed(1)
+tree <- rpart(income ~ ., train, method = "class")
+probs <- predict(tree, test, type = "prob")[,2]
+
+# Load the ROCR library
+
+library(ROCR)
+# Make a prediction object: pred
+pred<- prediction(probs, test$income)
+
+# Make a performance object: perf
+
+perf<- performance(pred, "auc")
+# Print out the AUC
+perf@y.values[[1]]
+
+```
+
+
+## Comparing the models
+
+```{r, eval = FALSE}
+
+##Comparing the methods
+
+# Load the ROCR library
+library(ROCR)
+# Make the prediction objects for both models: pred_t, pred_k
+pred_t<- prediction(probs_t, test$spam)
+pred_k<- prediction(probs_k, test$spam)
+# Make the performance objects for both models: perf_t, perf_k
+perf_t<- performance(pred_t,"tpr","fpr")
+perf_k<- performance(pred_k,"tpr","fpr")
+# Draw the ROC lines using draw_roc_lines()
+plot(perf_t)
+plot(perf_k)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

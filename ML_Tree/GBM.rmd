@@ -1,0 +1,309 @@
+---
+title: "Boosted Trees"
+output: html_notebook
+---
+
+## Boosting
+
+### Adaboost
+
+** Train decision tree with equal weights
+** Increase or lower the weights of the observations which are difficult to classify and easy    to classify respectively.
+** Second tree is grown upon the weighted data
+
+**New Model is Tree1 + Tree2
+
+** Classification error from this new 2-tree ensemble model
+** Grow 3rd tree to predict the revised residuals
+** Repeat this process for specified number of iteration
+
+### Gradient Boosting Machine
+
+**(Gradient Boosting = Gradient Descent + Boosting)
+
+** Fit an additive model (ensemble) in a forward stagewise manner.
+** In each stage introduce a weak learner (eg; decision tree) to compensate the           shortcomings of existing learners.
+** In Adaboost shortcoming are identified by high weights data points.
+** In gradient boosting, shortcomings are identified by gradients.
+
+#### Train a GBM model
+
+
+```{r, eval = FALSE}
+
+# Convert "yes" to 1, "no" to 0
+credit_train$default <- ifelse(credit_train$default == "yes", 1, 0)
+
+# Train a 10000-tree GBM model
+set.seed(1)
+credit_model <- gbm(formula = default ~ ., 
+                    distribution = "bernoulli", 
+                    data = credit_train,
+                    n.trees = 10000)
+                    
+# Print the model object                    
+print(credit_model)
+
+# summary() prints variable importance
+summary(credit_model)
+
+
+```
+
+
+![GBM_plot1](D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree/gbm_plot1.JPG)
+
+#### Understing the GBM Model output
+
+**summary(model) gives the relative importance for each variable.
+
+```{r, eval = FALSE}
+
+# Since we converted the training response col, let's also convert the test response col
+credit_test$default <- ifelse(credit_test$default == "yes", 1, 0)
+
+# Generate predictions on the test set
+preds1 <- predict(object = credit_model, 
+                  newdata = credit_test,
+                  n.trees = 10000,
+                type = "link")
+
+# Generate predictions on the test set (scale to response)
+preds2 <- predict(object = credit_model, 
+                  newdata = credit_test,
+                  n.trees = 10000,
+                  type = "response")
+
+# Compare the range of the two sets of predictions
+range(preds1)
+range(preds2)
+
+# Generate the test set AUCs using the two sets of preditions & compare
+auc(actual = credit_test$default, predicted = preds1)  #default
+auc(actual = credit_test$default, predicted = preds2)  #rescaled
+
+```
+
+## GBM Hyperparameter
+
+### Tuning a gbm Model
+
+#### GBM Hyper parameters
+
+** ntrees: number of treess
+** bag.fraction: proportion of observation to be sampled in each tree
+** n.minobbsinodde: minimum number of observation in trees terminal nodes
+** interaction.depth: maximum nodes per tree
+** shrinkage: Learning rate
+
+![Early_Stopping](D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree/early_stopping.JPG)
+
+```{r, eval = FALSE}
+
+# Optimal ntree estimate based on OOB
+ntree_opt_oob <- gbm.perf(object = credit_model, 
+                          method = "OOB", 
+                          oobag.curve = TRUE)
+
+# Train a CV GBM model
+set.seed(1)
+credit_model_cv <- gbm(formula = default ~ ., 
+                       distribution = "bernoulli", 
+                       data = credit_train,
+                       n.trees = 10000,
+                       cv.folds = 2)
+
+# Optimal ntree estimate based on CV
+ntree_opt_cv <- gbm.perf(object = credit_model_cv, 
+                         method = "cv")
+ 
+# Compare the estimates                         
+print(paste0("Optimal n.trees (OOB Estimate): ", ntree_opt_oob))                         
+print(paste0("Optimal n.trees (CV Estimate): ", ntree_opt_cv))
+
+```
+
+
+![Bernoulli_Deviance](D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree/bernoulli_deviance.JPG)
+   
+![OOB_Bernoulli_Deviance](D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree/oob_bernoulli_deviance.JPG)
+
+
+![Bernoulli_Deviance2](D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree/benoulli_deviance2.JPG)
+
+
+## OOB vs CV-based early stopping
+
+In the previous exercise, we used OOB error and cross-validated error to estimate the optimal number of trees in the GBM. These are two different ways to estimate the optimal number of trees, so in this exercise we will compare the performance of the models on a test set. We can use the same model object to make both of these estimates since the predict.gbm() function allows you to use any subset of the total number of trees (in our case, the total number is 10,000).
+
+
+
+```{r, eval = FALSE}
+
+# Generate predictions on the test set using ntree_opt_oob number of trees
+preds1 <- predict(object = credit_model, 
+                  newdata = credit_test,
+                  n.trees = ntree_opt_oob)
+                  
+# Generate predictions on the test set using ntree_opt_cv number of trees
+preds2 <- predict(object = credit_model, 
+                  newdata = credit_test,
+                  n.trees = ntree_opt_cv)   
+
+# Generate the test set AUCs using the two sets of preditions & compare
+auc1 <- auc(actual = credit_test$default, predicted = preds1)  #OOB
+auc2 <- auc(actual = credit_test$default, predicted = preds2)  #CV 
+
+# Compare AUC 
+print(paste0("Test set AUC (OOB): ", auc1))                         
+print(paste0("Test set AUC (CV): ", auc2))
+
+```
+
+
+### Compare and plot the ROC
+
+```{r, eval = FALSE}
+
+# Generate the test set AUCs using the two sets of predictions & compare
+actual <- credit_test$default
+dt_auc <- auc(actual = actual, predicted = dt_preds)
+bag_auc <- auc(actual = actual, predicted = bag_preds)
+rf_auc <- auc(actual = actual, predicted = rf_preds)
+gbm_auc <- auc(actual = actual, predicted = gbm_preds)
+
+# Print results
+sprintf("Decision Tree Test AUC: %.3f", dt_auc)
+sprintf("Bagged Trees Test AUC: %.3f", bag_auc)
+sprintf("Random Forest Test AUC: %.3f", rf_auc)
+sprintf("GBM Test AUC: %.3f", gbm_auc)
+
+
+## Compare the ROC
+
+# List of predictions
+preds_list <- list(dt_preds, bag_preds, rf_preds, gbm_preds)
+
+# List of actual values (same for all)
+m <- length(preds_list)
+actuals_list <- rep(list(credit_test$default), m)
+
+# Plot the ROC curves
+pred <- prediction(preds_list, actuals_list)
+rocs <- performance(pred, "tpr", "fpr")
+plot(rocs, col = as.list(1:m), main = "Test Set ROC Curves")
+legend(x = "bottomright", 
+       legend = c("Decision Tree", "Bagged Trees", "Random Forest", "GBM"),
+       fill = 1:m)
+
+```
+
+
+![ROC_Curves](D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree/ROC_Curves.JPG)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

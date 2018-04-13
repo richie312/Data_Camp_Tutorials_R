@@ -1,0 +1,213 @@
+---
+title: "Bagged Trees"
+output: html_notebook
+---
+
+## Bagged Trees
+
+Bootstrap Aggregation
+
+Where Bootstrap is the sampling with replacement
+
+** Step1 Sampling with replacement
+** Train decision tree on created bootstrap samples
+
+Let's start by training a bagged tree model. You'll be using the bagging() function from the ipredpackage. The number of bagged trees can be specified using the nbagg parameter, but here we will use the default (25).
+
+If we want to estimate the model's accuracy using the "out-of-bag" (OOB) samples, we can set the the **coob** parameter to TRUE. The OOB samples are the training obsevations that were not selected into the bootstrapped sample (used in training). Since these observations were not used in training, we can use them instead to evaluate the accuracy of the model (done automatically inside the bagging() function).
+
+```{r, eval = FALSE}
+
+library(ipred)
+
+# Bagging is a randomized model, so let's set a seed (123) for reproducibility
+set.seed(123)
+
+# Train a bagged model
+credit_model <- bagging(formula = default ~ ., 
+                        data = credit_train,
+                        coob = TRUE)
+
+# Print the model
+print(credit_model)
+
+```
+
+## Evaluating the bagged tree performance
+
+### Prediction and confusion matrix
+
+
+```{r, eval = FALSE }
+
+
+# Generate predicted classes using the model object
+class_prediction <- predict(object = credit_model,    
+                            newdata = credit_test,  
+                            type = "class")  # return classification labels
+
+# Print the predicted classes
+print(class_prediction)
+
+# Calculate the confusion matrix for the test set
+confusionMatrix(data = class_prediction,       
+                reference = credit_test$default)  
+
+```
+
+## Predict on a test set and compute AUC
+
+
+```{r, eval = FALSE}
+
+# Generate predictions on the test set
+pred <- predict(object = credit_model,
+                newdata = credit_test,
+                type = "prob")
+
+# `pred` is a matrix
+class(pred)
+                
+# Look at the pred format
+head(pred)
+                
+# Compute the AUC (`actual` must be a binary (or 1/0 numeric) vector)
+auc(actual = ifelse(credit_test$default == "yes", 1, 0), 
+    predicted = pred[,"yes"])                    
+
+```
+
+
+## K fold validation with caret package
+
+```{r, eval = FALSE}
+
+library(caret)
+
+# Specify the training configuration
+ctrl <- trainControl(method = "cv",     # Cross-validation
+                     number = 5,      # 5 folds
+                     classProbs = TRUE,                  # For AUC
+                     summaryFunction = twoClassSummary)  # For AUC
+
+# Cross validate the credit model using "treebag" method; 
+# Track AUC (Area under the ROC curve)
+set.seed(1)  # for reproducibility
+credit_caret_model <- train(default ~ .,
+                            data = credit_train, 
+                            method = "treebag",
+                            metric = "ROC",
+                            trControl = ctrl)
+
+# Look at the model object
+print(credit_caret_model)
+
+# Inspect the contents of the model list 
+names(credit_caret_model)
+
+# Print the CV AUC
+credit_caret_model$results[,"ROC"]
+
+# Generate predictions on the test set
+pred <- predict(object = credit_caret_model, 
+                newdata = credit_test,
+                type = "prob")
+
+# Compute the AUC (`actual` must be a binary (or 1/0 numeric) vector)
+auc(actual = ifelse(credit_test$default == "yes", 1, 0), 
+                    predicted = pred[,"yes"])
+
+```
+
+## Compare test set performance to CV performance
+
+```{r, eval = FALSE}
+
+# Print ipred::bagging test set AUC estimate
+print(credit_ipred_model_test_auc)
+
+# Print caret "treebag" test set AUC estimate
+print(credit_caret_model_test_auc)
+                
+# Compare to caret 5-fold cross-validated AUC
+credit_caret_model$results[, 2]
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```
