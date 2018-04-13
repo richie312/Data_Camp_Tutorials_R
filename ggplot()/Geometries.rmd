@@ -1,0 +1,360 @@
+---
+title: "Scatterplot"
+output: html_notebook
+---
+
+## Geometries
+
+![Geometries](D:/Documents/R_Projects/Data_Camp_Tutorials/ggplot()/geometry.JPG)
+
+![Shapes(pch)](D:/Documents/R_Projects/Data_Camp_Tutorials/ggplot()/shape.JPG)
+
+![ggplt_elements](D:/Documents/R_Projects/Data_Camp_Tutorials/ggplot()/Grammar_Elements.JPG)
+
+
+## Scatter plots and jittering (1)
+
+
+```{r}
+library(ggplot2)
+# Shown in the viewer:
+ggplot(mtcars, aes(x = cyl, y = wt)) +
+  geom_point()
+
+# Solutions:
+# 1 - With geom_jitter()
+ggplot(mtcars, aes(x = cyl, y = wt)) +
+  geom_jitter()
+
+# 2 - Set width in geom_jitter()
+ggplot(mtcars, aes(x = cyl, y = wt)) +
+  geom_jitter(width = 0.1)
+
+# 3 - Set position = position_jitter() in geom_point() ()
+ggplot(mtcars, aes(x = cyl, y = wt)) +
+  geom_point(position = position_jitter(0.1))
+
+
+
+```
+
+
+## Scatter plots and jittering (2)
+
+
+```{r}
+setwd("D:/Documents/R_Projects/Data_Camp_Tutorials/ggplot()")
+vocab = read.csv("Vocab.csv", stringsAsFactors = FALSE)
+Vocab = vocab[-1]
+
+
+# Basic scatter plot of vocabulary (y) against education (x). Use geom_point()
+ggplot(Vocab, aes(x = education, y = vocabulary))+geom_point()
+
+
+# Use geom_jitter() instead of geom_point()
+ggplot(Vocab, aes(x = education, y = vocabulary))+geom_jitter()
+
+
+
+# Using the above plotting command, set alpha to a very low 0.2
+ggplot(Vocab, aes(x = education, y = vocabulary))+geom_jitter(alpha = 0.2)
+
+
+
+# Using the above plotting command, set the shape to 1
+
+ggplot(Vocab, aes(x = education, y = vocabulary))+geom_jitter(alpha = 0.2, shape = 1)
+
+
+```
+
+
+## geom_histogram()
+
+
+```{r}
+
+# 1 - Make a univariate histogram
+ggplot(mtcars, aes(x = mpg)) +
+  geom_histogram()
+
+# 2 - Plot 1, plus set binwidth to 1 in the geom layer
+ggplot(mtcars, aes(x = mpg)) +
+  geom_histogram(binwidth = 1)
+
+
+# 3 - Plot 2, plus MAP ..density.. to the y aesthetic (i.e. in a second aes() function)
+
+ggplot(mtcars, aes(x = mpg)) +
+  geom_histogram(aes(y = ..density..),binwidth = 1)
+
+
+# 4 - plot 3, plus SET the fill attribute to "#377EB8"
+
+ggplot(mtcars, aes(x = mpg)) +
+  geom_histogram(aes(y = ..density..),binwidth = 1, fill = "#377EB8")
+
+
+```
+
+
+## Position
+
+```{r}
+
+# Draw a bar plot of cyl, filled according to am
+ggplot(mtcars, aes(x = cyl, fill = am)) +
+  geom_bar()
+
+# Change the position argument to stack
+
+ggplot(mtcars, aes(x = cyl, fill = am)) +
+  geom_bar(position = "stack")
+
+# Change the position argument to fill
+
+ggplot(mtcars, aes(x = cyl, fill = am)) +
+  geom_bar(position = "fill")
+
+
+# Change the position argument to dodge
+
+ggplot(mtcars, aes(x = cyl, fill = am)) +
+  geom_bar(position = "dodge")
+
+```
+
+##  Overlapping bar plots
+
+
+```{r}
+# 1 - The last plot form the previous exercise
+ggplot(mtcars, aes(x = cyl, fill = am)) +
+  geom_bar(position = "dodge")
+
+# 2 - Define posn_d with position_dodge()
+posn_d <- position_dodge(width = 0.2)
+
+# 3 - Change the position argument to posn_d
+
+ggplot(mtcars, aes(x = cyl, fill = am)) +
+  geom_bar(position = posn_d)
+
+
+# 4 - Use posn_d as position and adjust alpha to 0.6
+
+ggplot(mtcars, aes(x = cyl, fill = am)) +
+  geom_bar(position = posn_d, alpha = 0.6)
+
+```
+
+
+## freq_poly()
+
+
+```{r}
+
+# A basic histogram, add coloring defined by cyl
+ggplot(mtcars, aes(mpg, fill = cyl)) +
+  geom_histogram(binwidth = 1)
+
+# Change position to identity
+
+ggplot(mtcars, aes(mpg, fill = cyl)) +
+  geom_histogram(binwidth = 1, position = "identity")
+
+
+# Change geom to freqpoly (position is identity by default)
+
+ggplot(mtcars, aes(mpg, col = cyl)) +
+  geom_histogram(binwidth = 1, position = "identity")+
+  geom_freqpoly(binwidth = 1)
+```
+
+## Bar plots with color ramp, part 1
+
+
+```{r, eval= FALSE}
+setwd("D:/Documents/R_Projects/Data_Camp_Tutorials/ggplot()")
+vocab = read.csv("Vocab.csv", stringsAsFactors = FALSE)
+Vocab = vocab[-1]
+
+# Use the default brewed color palette
+
+ggplot(Vocab, aes(x = education, fill = vocabulary)) +
+geom_bar(position = "fill") +
+scale_fill_brewer()
+
+
+```
+
+
+## Bar plots with color ramp, part 2
+
+```{r, eval = FALSE}
+## Load the necessary packages
+library(RColorBrewer)
+# Final plot of last exercise
+ggplot(Vocab, aes(x = education, fill = vocabulary)) +
+  geom_bar(position = "fill") +
+  scale_fill_brewer()
+
+# Definition of a set of blue colors
+blues <- brewer.pal(9, "Blues") # from the RColorBrewer package
+
+# 1 - Make a color range using colorRampPalette() and the set of blues
+blue_range<- colorRampPalette(blues)
+
+# 2 - Use blue_range to adjust the color of the bars, use scale_fill_manual()
+ggplot(Vocab, aes(x = education, fill = vocabulary)) +
+  geom_bar() +
+  scale_fill_manual(values = blue_range(11))
+
+
+```
+
+## Overlapping histograms (2)
+
+
+```{r}
+
+# 1 - Basic histogram plot command
+ggplot(mtcars, aes(mpg)) +
+  geom_histogram(binwidth = 1)
+
+# 2 - Plot 1, Expand aesthetics: am onto fill
+
+ggplot(mtcars, aes(mpg, fill = am)) +
+  geom_histogram(binwidth = 1)
+
+# 3 - Plot 2, change position = "dodge"
+
+ggplot(mtcars, aes(mpg, fill = am)) +
+  geom_histogram(binwidth = 1, position = "dodge")
+  
+
+
+# 4 - Plot 3, change position = "fill"
+
+ggplot(mtcars, aes(mpg, fill = am)) +
+  geom_histogram(binwidth = 1, position = "fill")
+
+# 5 - Plot 4, plus change position = "identity" and alpha = 0.4
+
+ggplot(mtcars, aes(mpg, fill = am)) +
+  geom_histogram(binwidth = 1, position = "identity", alpha = 0.4)
+
+# 6 - Plot 5, plus change mapping: cyl onto fill
+
+ggplot(mtcars, aes(mpg, fill = cyl)) +
+  geom_histogram(binwidth = 1, position = "identity", alpha = 0.4)
+
+
+```
+
+
+
+## Line PLots
+
+```{r}
+
+# Plot unemploy as a function of date using a line plot
+ggplot(economics, aes(x = date, y = unemploy)) + geom_line()
+
+
+# Adjust plot to represent the fraction of total population that is unemployed
+
+ggplot(economics, aes(x = date, y = unemploy/pop)) + geom_line()
+```
+
+## Line PLot_geom_rect()
+
+```{r, eval = FALSE}
+
+# Basic line plot
+ggplot(economics, aes(x = date, y = unemploy/pop)) +
+  geom_line()
+
+# Expand the following command with geom_rect() to draw the recess periods
+ggplot(economics, aes(x = date, y = unemploy/pop)) +
+  geom_rect(data = recess,
+         aes(xmin = begin, xmax = end, ymin = -Inf, ymax = +Inf),
+         inherit.aes = FALSE, fill = "red", alpha = 0.2) +
+  geom_line()
+```
+
+
+![Recession](D:/Documents/R_Projects/Data_Camp_Tutorials/ggplot()/recession.JPG)
+
+
+## geom_dotplot()
+
+
+```{r}
+
+## Load the packages
+
+library(ggplot2)
+
+ ##"Basic" dot plot, with geom_point():
+ggplot(mtcars, aes(cyl, wt, col = am)) +
+  geom_point(position = position_jitter(0.2, 0))
+
+# 1 - "True" dot plot, with geom_dotplot():
+ggplot(mtcars, aes(cyl, wt, fill = am)) +
+  geom_dotplot(binaxis = "y", stackdir = "center")
+
+# 2 - qplot with geom "dotplot", binaxis = "y" and stackdir = "center"
+qplot(
+  cyl, wt,
+  data = mtcars,
+  fill = am,
+  geom = "dotplot",
+  binaxis = "y",
+  stackdir = "center"
+)
+
+```
+
+
+## Put it all together
+
+```{r}
+
+
+# 2 - Use ggplot() for the first instruction
+ ggplot(mtcars, aes(x = gear, fill = am)) +
+  geom_bar(position = "Dodge")
+# 3 - Plot 2, add facet_grid() layer
+
+ggplot(mtcars, aes(x = gear, fill = am)) +
+  geom_bar(position = "Dodge")+
+  facet_grid(.~vs)
+  
+
+# 4 - Define an object for position jitterdodge, to use below
+posn.jd <- position_jitterdodge(0.5, 0, 0.6)
+
+# 5 - Plot 3, but use the position object from instruction 4
+
+ggplot(mtcars, aes(x = gear,y = hp, col = cyl)) +
+  geom_point(position = posn.jd, size = 3, alpha = 0.5)+
+  facet_grid(.~vs)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
