@@ -1,0 +1,630 @@
+---
+title: "Intermediate_R"
+output: html_notebook
+---
+
+
+## Combine the data
+
+```{r, eval=FALSE}
+
+# me, other_199, and previous_4 are available in your workspace
+
+# Merge me and other_199: my_class
+my_class<-c(me, other_199)
+
+
+# cbind() my_class and previous_4: last_5
+
+last_5<- cbind(my_class, previous_4)
+# Name last_5 appropriately
+nms <- paste0("year_", 1:5)
+colnames(last_5)<- nms
+
+```
+
+## How many for logical vectors: use sum and mean functions to find out the numbers and the proportion
+
+```{r, eval = FALSE}
+
+# me, my_class and last_5 are preloaded
+
+# How many grades in your class are higher than 75?
+sum(my_class > 75)
+
+# How many students in your class scored strictly higher than you?
+sum(my_class> 89)
+
+# What's the proportion of grades below or equal to 64 in the last 5 years?
+mean(last_5<=64)
+
+```
+
+##else if
+
+You can further customize your if-else constructs with an else if statement:
+```{r,eval = FALSE}
+** if (condition) {
+**   expr
+** } else if (condition) {
+**  expr
+** } else {
+**  expr
+** }
+```
+
+
+Remember here that as soon as R encounters a condition that evaluates to TRUE, the corresponding expr is executed and the control structure is abandoned.
+
+Note that the else if and else parts should come on the same line as the closing bracket of the previous statement! If you don't do this, R will not understand your code!
+
+
+## if, else-
+
+As a refresher of the syntax, have a look at this example:
+
+if (me > 80) {
+  print("Good student!")
+} else {
+  print("Better luck next year!")
+}
+Your grade, me, equals 89, so the condition in the if statement evaluates to TRUE, and print("Good student!") is executed.
+
+Note that the else part should come on the same line as the closing bracket of the if statement! If you don't do this, R will not understand your code!
+
+
+```{r, eval = FALSE}
+
+# me, my_class and last_5 are preloaded
+
+# Embedded control structure: fix the error
+if (mean(my_class) < 75) {
+  if (mean(my_class) > me) {
+    print("average year, but still smarter than me")
+  } else {
+    print("average year, but I'm not that bad")
+  }
+} else {
+  if (mean(my_class) > me) {
+    print("smart year, even smarter than me")
+  } else {
+    print("smart year, but I am smarter")
+  }
+}
+
+
+```
+
+
+## Operations and controls expertise
+
+Conditionals and control Flow
+
+```{r, eval =  FALSE}
+
+# me, my_class and last_5 are preloaded
+
+# Create top_grades
+
+top_grades<- my_class[my_class>=85]
+
+# Create worst_grades
+
+worst_grades<- my_class[my_class<65]
+
+# Write conditional statement
+
+if(length(top_grades)>length(worst_grades)){
+  print("top grades prevail")
+}
+
+
+```
+
+## While: start easy
+
+while (condition) {
+  expr
+}
+
+```{r, eval = FALSE}
+
+# Initialize the iterator i to be 1
+
+i<- 1
+
+# Code the while loop
+while ( logs[[i]]$success) {
+print(logs[[i]]$details$message)
+i<- i + 1
+}
+
+```
+
+
+## While: different approach
+
+```{r, eval=FALSE}
+
+# logs is available in your workspace
+
+# Initialize i and found
+i <- 1
+found <- FALSE
+
+# Code the while loop
+while (!found) {
+  if (!logs[[i]]$success && logs[[i]]$details$location == "waste") {
+    print("found")
+    found <- TRUE  
+  } else {
+    print("still looking")
+    i <- i + 1
+  }
+}
+
+
+# Code a for loop that prints the timestamp of each log
+for (i in 1:length(logs)) {
+print(logs[[i]]$timestamp)
+  
+}
+```
+
+## Different Approach for each iteration
+
+```{r, eval = FALSE}
+
+# Make the printout conditional: only if success
+for (log in logs) {if(log$success == TRUE)
+print(log$timestamp)  
+}
+
+for(i in logs){if (i$success == TRUE)
+print(i$timestamp)
+}
+
+```
+
+
+## Adapt the log list
+
+### Change the date format in the "log" list
+
+
+```{r, eval = FALSE}
+
+# logs is available in your workspace
+
+# Finish the for loop: add date element for each entry
+for (i in 1:length(logs)) {
+  logs[[i]]$date <- as.Date(logs[[i]]$timestamp)
+
+}
+
+# Print first 6 elements in logs
+print(head(logs))
+
+```
+
+
+## Collect all failures
+
+Your plant manager approaches you and asks for a report on all failures that are available in the logs list. Instead of the entire list, she is only interested in the failures. Get to work to generate what she asks for!
+
+Just a tip before you get to it: If you have a list of lists a and want to add a list b to it, you can use c(a, list(b)).
+
+
+```{r, eval = FALSE}
+
+# logs is available in your workspace
+
+# Intialize empty list: failures
+failures <- list()
+
+# Finish the for loop: add each failure to failures
+for (log in logs) {
+  if (log$success == FALSE) {
+    failures <- c(failures, list(log))
+  }
+}
+
+# Display the structure of failures
+str(failures)
+
+```
+
+
+## Function to extract the information
+
+```{r, eval = FALSE}
+
+
+# logs is available in your workspace
+
+# for loop to extract timestamp; put this inside function body below
+info <- c()
+for (log in logs) {
+ info <- c(info, log$timestamp)
+}
+
+# Build a function extract_info(): use for loop, add return statement
+extract_info <- function(x) {
+ for (log in logs) {
+ info <- c(info, logs$timestamp)
+ }
+return(info)
+}
+
+
+# Call extract_info() on logs
+
+extract_info(logs)
+
+## Alternative way
+
+# logs is available in your workspace
+
+# Adapt the extract_info() function.
+extract_info <- function(x, property) {
+  info <- c()
+  for (log in x) {
+   info <- c(info, log[[property]])
+  }
+  return(info)
+}
+
+# Call extract_info() on logs, set property to "timestamp"
+extract_info(logs, property = "timestamp")
+
+# Call extract_info() on logs, set property to "success"
+extract_info(logs, property = "success")
+
+```
+
+
+## Extract log information by keeping one arguement with the default value
+
+```{r, eval= FALSE}
+
+# logs is available in your workspace
+
+# Add default value for property argument
+extract_info <- function(x, property = "success") {
+  info <- c()
+  for (log in x) {
+   info <- c(info, log[[property]])
+  }
+  return(info)
+}
+
+# Call extract_info() on logs, don't specify property
+
+extract_info(logs)
+
+# Call extract_info() on logs, set property to "timestamp"
+
+extract_info(logs, property = "timestamp")
+
+
+````
+
+## Extract Log information - Alternative approach
+
+```{r, eval = FALSE}
+
+
+# logs is available in your workspace
+
+# Adapt extract_info():
+# - add argument with default value
+# - change function body
+extract_info <- function(x, property = "success", include_all = TRUE) {
+  info <- c()
+  for (log in x) {if(include_all | !log$success){
+
+   # add if construct around the line below
+   info <- c(info, log[[property]])
+
+  }
+  
+}
+return(info)
+}
+
+# Call extract_info() on logs, no additional arguments
+extract_info(logs)
+
+# Call extract_info() on logs, set include_all to FALSE
+extract_info(logs,include_all = FALSE)
+
+```
+
+
+### Extract info_Function: AN alternative approach
+
+```{r, eval = FALSE}
+
+# logs is available in your workspace
+
+# Defition of the extract_info() function
+extract_info <- function(x, property = "success", include_all = TRUE) {
+  info <- c()
+  for (log in x) {
+    if (include_all || !log$success) {
+     info <- c(info, log[[property]])
+    }
+  }
+  return(info)
+}
+
+# Generate vector of messages
+extract_info(logs, property = c("details","message"))
+
+# Generate vector of locations for failed log entries
+extract_info(logs, property = c("details", "location"), include_all = FALSE)
+
+```
+
+## Compute fraction of failures
+
+```{r, eval = FALSE}
+
+# logs is available in your workspace
+
+# Write the function compute_fail_pct
+compute_fail_pct <- function(list_of_log_entries) {
+  number_of_failures <- 0
+  for (log_entry in list_of_log_entries) {
+    if (!log_entry$success) {
+      number_of_failures <- number_of_failures + 1
+    }
+  }
+  number_of_log_entries <- length(list_of_log_entries)
+  fraction_of_failures <- number_of_failures / number_of_log_entries
+  percentage_of_failures <- 100 * fraction_of_failures
+  return(percentage_of_failures)
+}
+# Call compute_fail_pct() on logs
+compute_fail_pct(logs)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
