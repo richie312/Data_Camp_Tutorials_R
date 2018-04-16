@@ -1,0 +1,511 @@
+---
+title: "R_Intermediate"
+output: html_notebook
+---
+
+## lapply()
+
+
+```{r, eval = FALSE}
+# logs is available in your workspace
+
+# Call length() on each element of logs
+  
+  lapply(x, length)
+
+# Call class() on each element of logs
+
+lapply(logs, class)
+
+```
+
+
+## lapply on logs (1)
+
+Fist create the udf and then apply the same inside lapply() without the "()".
+
+```{r, eval = FALSE}
+
+# logs is available in your workspace
+
+# Define get_timestamp()
+get_timestamp <- function(x) {
+  x$timestamp
+}
+
+# Apply get_timestamp() over all elements in logs
+lapply(logs, get_timestamp)
+
+```
+
+
+## lapply()
+
+
+```{r, eval = FALSE}
+
+# Have lapply() use an anonymous function
+lapply(logs, function(x){x$timestamp})
+
+
+# Replace the anonymous function with `[[` 
+lapply(logs, function(x) { x[["timestamp"]] })
+
+
+
+```
+
+
+## sapply()
+
+
+```{r, eval = FALSE}
+
+# Call length() on each element of logs using sapply()
+sapply(logs, length)
+
+# Definition of get_timestamp
+get_timestamp <- function(x) {
+  x$timestamp
+}
+
+# Get vector of log entries' timestamps
+sapply(logs, get_timestamp)
+
+
+
+# logs is available in your workspace
+
+# Use sapply() to select the success element from each log: results
+results<- sapply(logs, function(x){x[["success"]]})
+
+# Call mean() on results
+
+mean(results)
+
+# Use sapply() to select the details element from each log
+
+sapply(logs, function(x){x[["details"]]})
+
+
+# logs is available in your workspace
+
+# Implement function get_failure_loc
+get_failure_loc <- function(x) {
+  if (!x[["success"]] == FALSE) {
+    return(NULL)
+  } else {
+    return(x$details$location)
+  }
+}
+
+# Use sapply() to call get_failure_loc on logs
+sapply(logs, get_failure_loc)
+
+```
+
+
+## vapply()
+
+````{r, eval = FALSE}
+
+# logs is available in your workspace
+
+# Convert the sapply call to vapply
+vapply(logs, length, integer(1))
+
+# Convert the sapply call to vapply
+vapply(logs, `[[`, "success", FUN.VALUE = logical(1))
+
+# logs is available in your workspace
+
+# Convert the sapply() call to a vapply() or lapply() call
+vapply(logs, `[[`, c("details", "message"), FUN.VALUE = character(1))
+
+# Convert the sapply() call to a vapply() or lapply() call
+lapply(logs, function(x) { x$details })
+
+# Return vector with uppercase version of message elements in log entries
+
+sapply(logs, function(x){toupper(x[[c("details","message")]])})
+
+```
+
+
+## grepl() and gsub()
+
+In the previous exercise, it appeared that the title Mr. may not cover all men on board. Instead of manually going through all titles that appear in the Name column of titanic, we can write a clever gsub() command that extracts the title part.
+
+The pattern we'll need is the following:
+
+"^.*, (.*?)\\..*$"
+With ^ and $ we signify the start and end of the string. Next, we have two .* parts in there: wildcards for the last name and first names. With , (.*?)\\. we use a similar pattern as before, but the parentheses allow us to re-use whatever is matched inside the parentheses in our replacement.
+
+```{r, eval = FALSE}
+
+# Extract the name column from titanic
+pass_names <- titanic$Name
+
+# Create the logical vectror is_man
+is_man<- grepl(", Mr\\.", pass_names)
+
+# Count the number of men
+
+sum(is_man == TRUE)
+
+# Count number of men based on gender
+sum(titanic$Sex == "male")
+
+
+# Extract the name column from titanic
+pass_names <- titanic$Name
+
+# Create titles
+titles <- gsub("^.*, (.*?)\\..*$", "\\1", pass_names)
+
+# Call unique() on titles
+unique(titles)
+
+```
+
+
+## Infer gender from name (3)
+
+
+After a close look at the different titles that appeared in the previous exercise, we made a selection of titles that can be linked to male passengers. Patterns for these titles are in the titles vector on the right.
+
+To figure out which passenger has which title, we can create a matrix. In this matrix, each passenger is a row, and each column represents a title. If a certain matrix element is TRUE, this means that the passenger has the title. This also means that every row can only contain one TRUE, the rest being FALSE, because titles are mutually exclusive. That is, nobody is titled both Mr. and Major, for instance. To end up with this matrix, we could use the following for loop:
+
+res <- matrix(nrow = length(pass_names),
+              ncol = length(titles))
+
+for (i in seq_along(titles)) {
+  res[, i] <- grepl(titles[i], pass_names)
+}
+There's a way more concise way to do this, however. Remember the vapply() function from the third chapter? You can use it to call grepl() over all titles in the titles vector, with pass_names as an additional argument. If you do this properly, you'll end up with the exact same matrix described above. Simply taking the sum of this matrix should give us the total number of hits for each title, and thus the total count of males inferred from their respective titles.
+
+```{r, eval = FALSE}
+
+pass_names <- titanic$Name
+titles <- paste(",", c("Mr\\.", "Master", "Don", "Rev", "Dr\\.", "Major", "Sir", "Col", "Capt", "Jonkheer"))
+
+# Finish the vapply() command
+hits <- vapply(titles,
+               FUN = grepl,
+               FUN.VALUE = logical(length(pass_names)),
+               pass_names)
+
+# Calculate the sum() of hits
+
+sum(hits == TRUE)
+# Count number of men based on gender
+sum(titanic$Sex == "male")
+
+```
+
+
+##  Reformat passenger names
+Now that you had some practice on regular expressions, let's try to clean up the names.
+
+The pass_names vector that you worked with before is already preloaded. For men, the overall format is like before. For women, however, there is only a female title, but then the name of her spouse. The first two elements in name show this:
+
+pass_names[1:2]
+>[1] "Braund, Mr. Owen Harris"
+[2] "Cumings, Mrs. John Bradley (Florence Briggs Thayer)"
+Suppose we want to change men's names to a modern format, without a title, and change the women's names to only include their own name, like this:
+
+>clean_pass_names[1:2]
+[1] "Owen Harris"
+[2] "Florence Briggs Thayer"
+To make this conversion, we've started a function convert_name() that converts the name depending on the case (male or female). The first gsub() function uses \\1 as the replacement argument. This is a reference to the matched characters that are captured inside the parentheses of the pattern. To see how it works, try the following example in the console:
+
+gsub("(a|b|c)", "_\\1_", "all cool brother")
+Once you finish this function, you can use it inside vapply() to apply it to all elements in the pass_names vector.
+
+
+
+```{r, eval = FALSE}
+
+# pass_names is available in your workspace
+
+convert_name <- function(name) {
+  # women: take name from inside parentheses
+  if (grepl("\\(.*?\\)", name)) {
+    gsub("^.*?\\((.*?)\\)$", "\\1", name)
+  # men: take name before comma and after title
+  } else {
+    # Finish the gsub() function
+    gsub("^(.*?),\\s[a-zA-Z\\.]*?\\s(.*?)$", "\\2 \\1", name)
+  }
+}
+
+# Call convert_name on name
+clean_pass_names <- vapply(pass_names, FUN = convert_name,
+                           FUN.VALUE = character(1), USE.NAMES = FALSE)
+
+# Print out clean_pass_names
+print(clean_pass_names)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
