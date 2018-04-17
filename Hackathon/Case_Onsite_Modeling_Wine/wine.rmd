@@ -1,0 +1,248 @@
+---
+title: "Wine Quality Analysis"
+author: "Aritra Chatterjee"
+date: "17 April 2018"
+output:
+  html_document:
+    df_print: paged
+---
+
+## Introduction
+
+The data set contains 13 features on wine quality for Red and White wines. The objective is to do exploratory data analysis.
+
+The first part of the document contains the relationship between in the influencing variable on the quality of wine for both the category.
+
+In second part, given the data for different feature, classification model had been built in order to classify wine in Red or White category. In order to acheive the result, the data set had been split into training and validation set. Confusion matrix had been drawn in order to show the accuracy rate of the model
+
+Lets get started!
+
+#### Setup the working directory and load necessary packages
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+setwd("D:/Documents/Hackathon/Case_Onsite_Modeling_Wine")
+
+
+## load the necessay packages
+
+library(ggplot2)
+library(dplyr)
+library(corrplot)
+library(rpart)
+library(rpart.plot)
+library(RColorBrewer)
+
+```
+
+
+
+## Read the dataset
+
+```{r, echo =FALSE, warning=FALSE}
+
+# Read the dataset
+
+wine = read.csv("wine_dataset.csv", stringsAsFactors = FALSE)
+
+
+## Convert the style variable into factor
+
+wine$style<- as.factor(wine$style)
+wine$style<-as.numeric(wine$style)
+
+
+## Correaltion Matrix
+
+data_mat<-cor(wine)
+## corrplot(data_mat, method = "circle")
+
+```
+![Corrplot](D:/Documents/Hackathon/Case_Onsite_Modeling_Wine/corrplot.jpeg)
+
+#### Top contributor in determing the quality of wine are 
+
+``"Alcohol"``,``"density"``,``"chlorides"`` and ``"volatile_acidity"``
+
+### Unvariate Analysis
+
+Let us see the relationship between the variables and the quality of the wine with the help of ggplot()
+
+
+```{r, echo=FALSE, message=FALSE, warning = FALSE}
+
+## ggplot() for alcohol vs density for both red and white wines.
+
+ggplot(wine, aes(x = quality, y = alcohol, col = factor(style))) +
+  geom_point()+geom_jitter()+
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line=element_line(colour="black"),
+        plot.title = element_text(hjust = 0.5,size=15,colour="indianred4"))+
+  ggtitle("Wine Quality vs Alcohol content for both Red and White Wines")
+
+
+ggplot(wine, aes(x = alcohol, y = density, col = factor(style))) +
+  geom_point()+ # Copy from Plot 2
+  geom_smooth(aes(group = 1), method = "lm",se =FALSE,linetype = 2)+geom_jitter()+theme(plot.title = element_text(hjust = 0.5,size=15,colour="indianred4"))+
+  theme_bw()+
+ggtitle("Wine Quality vs wine Density  for both Red and White Wines")
+
+ggplot(wine, aes(x = quality, y = chlorides, col = factor(style))) +
+  geom_point()+geom_jitter(width = 0.6)+geom_boxplot()+
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line=element_line(colour="black"),
+        plot.title = element_text(hjust = 0.5,size=15,colour="indianred4"))+
+  ggtitle("Wine Quality vs chlorides content for both Red and White Wines")
+
+
+ggplot(wine, aes(x = quality, y = volatile_acidity, col = factor(style))) +
+  geom_jitter()+geom_smooth(method = "loess")+
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line=element_line(colour="black"),
+        plot.title = element_text(hjust = 0.5,size=15,colour="indianred4"))+
+  ggtitle("Wine Quality vs volatile_acidity for both Red and White Wines")
+
+
+ ggplot(aes(x=pH),data =wine) + 
+   geom_density(aes(fill = style))+
+   facet_wrap(~quality)+
+    theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line=element_line(colour="black"),
+        plot.title = element_text(hjust = 0.5,size=15,colour="indianred4"))+
+   ggtitle('pH values  relationship with Quality')
+
+## Histogram
+
+ggplot(wine, aes(quality, fill = factor(style), col = factor(style))) + 
+  geom_histogram(binwidth = 1, position = "identity", alpha = 0.4)+
+  xlim(c(0,10))+
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line=element_line(colour="black"),
+        plot.title = element_text(hjust = 0.5,size=15,colour="indianred4"))+
+  ggtitle("Overlapping Histogram for both Red and White Wines")
+
+
+
+```
+
+
+
+## Classification: red or white wine
+
+Our aim is to predict with the given inputs , to which class the wine belongs. Red as "1" and white wine as "2".
+
+The dataset had been split into two parts in 0.7 to 0.3 ratio. Training set contains the 70% of the dataset and validation set contains the 30 % of the test set.
+
+### Split the dataset
+
+```{r, echo=FALSE, message=FALSE, warning = FALSE}
+
+##Divide the data into two part one training and another is validation
+
+# Total number of rows in the credit data frame
+n <- nrow(wine)
+
+# Number of rows for the training set (80% of the dataset)
+n_train <- round(0.7 * n) 
+
+# Create a vector of indices which is an 80% random sample
+set.seed(123)
+train_indices <- sample(1:n, n_train)
+
+# Subset the credit data frame to training indices only
+wine_train <- wine[train_indices, ]  
+
+# Exclude the training indices to create the test set
+wine_valid <- wine[-train_indices, ]  
+
+```
+
+## Build the model using rpart (Decision Tree)
+
+```{r, echo=FALSE, message=FALSE, warning = FALSE}
+
+# Train the model (to predict 'default')
+wine_model <- rpart(formula = style~., 
+                      data = wine_train, 
+                      method = "class")
+
+
+## Plot the tree
+
+rpart.plot(wine_model)
+
+
+```
+![Tree_Plot](D:/Documents/Hackathon/Case_Onsite_Modeling_Wine/wine_tree_plot.png)
+
+
+## Predict on validation set
+
+
+```{r, echo=FALSE, message=FALSE, warning = FALSE}
+
+# Generate predicted classes using the model object
+class_prediction <- predict(object = wine_model,  
+                        newdata = wine_valid,   
+                        type = "class")  
+```
+
+## Confusion Matrix
+
+```{r, echo=FALSE, message=FALSE, warning = FALSE}
+# Calculate the confusion matrix wrt validaton set
+# Construct the confusion matrix: conf
+
+conf = table(wine_valid$style,class_prediction)
+print(conf)
+
+# Print out the accuracy
+
+print(sum(diag(conf))/sum(conf))
+
+## Print out the Recall
+
+print(conf[2,1]/sum(conf[2,1]+conf[2,2]))
+
+```
+
+## Summary
+
+The model accuracy is 0.97 or 97.94%. which is pretty good. But this is done on validation data set not on the unseen data set. 
+
+Due to time constrain, not much analysis has been done on the actual key factors which influence the wine quality in significant manner.
+As we all know the top contributing factor for the quality of wine is ``Climate and Weather``, ``Temperature``, ``Soil`` and ``Sunlight``. It is correctly mentioned that wine is prepared not in wine lab but in vineyard.
+
+###Key Findings
+
+Top Contributing factors which has significant correlation with quality (negative or positive) are ``"Alcohol"``,``"density"``,``"chlorides"`` and ``"volatile_acidity"``.
+
+1. There is a positive correaltion between quality and alcohol content (0.44), which means 40 percent of the quality is influenced by alcohol.
+
+2. Alcohol and Density both are inversely correlated, which can be contributing factor in predicting class prediction of wines.
+
+3. There is negative correlation among the two.
+
+Careful manipulaiton in the content of these influencing variables in wine can actually influnce the quality of the wine significantly.
+
+In other words, how actual contributing factors like ``Climate and Weather``, ``Temperature``, ``Soil`` and ``Sunlight``determines the influencing variable for quality of wine will definitely help.
+
+
+Here the best case scenario is to predict the class of the wine (Red or White), given the inputs with tree ML techniques, which will definitely save the time and effort to check them manually.
+
+The model can also be built on the quality to predict its quality based on neural networks. Since that needs more computational time for both model bulding and compuation, has been kept away from the scope of this study.
+
+
+
+
+

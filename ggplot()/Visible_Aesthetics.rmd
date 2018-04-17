@@ -254,4 +254,3 @@ ggplot(diamonds, aes(x = clarity, y = carat, color = price))+ geom_point(alpha =
 
 
 
-

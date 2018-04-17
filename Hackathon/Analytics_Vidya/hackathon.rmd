@@ -1,0 +1,168 @@
+## Read me file
+
+In order to predict the electricity consumption for every month, where future month cannot be taken into account in the prediction of current month, dynamic dataset had been used. I have used generalised boosted regression model for the prediction.
+
+Only three packages had been used for the prediction,
+
+*dplyr Data Manipulation
+*gbm   Model
+*corrplot Correlation Matrix
+
+
+### Read the Dataset
+
+The dataset has been read using the following command in R.
+
+```{r, eval=FALSE}
+data<-read.csv("train.csv",stringsAsFactors = FALSE)
+test<-read.csv("test.csv",stringsAsFactors = FALSE)
+sample<-read.csv("sample_submission.csv",stringsAsFactors = FALSE)
+```
+
+
+
+#### Examine the dataset
+
+Let us check the correlation of the variables on the independent variable, in this context it is electricity consumption. 
+
+Before, building a correlation matrix, we need to examine the class of each variable by the following code,
+
+```{r,eval=FALSE}
+str(data)
+```
+
+Upon careful examination, we can see that var2 (anonymous variable) is in character of thee levels A, B, C
+Now, in order to establish the correalation of this variable with other variable, it has to convert itself into numbers.
+With the following code, the elements of anonymous variable var2 can be converted into numeric values 1,2,3 with the match function.
+
+```{r, eval= FALSE}
+myLetters<-toupper(letters[1:26])
+data$var2<-match(data$var2, myLetters)
+```
+
+Now, correlation matrix can be computed on the dataset.
+
+##### Select the variables for computation of correlation matrix
+
+```{r, eval=FALSE}
+data_cor<-data[,c(3,4,5,6,7,8)]
+```
+Computation of correlation matrix
+
+```{r, eval=FALSE}
+cor_mat<-cor(data_cor)
+corrplot(cor_mat)
+```
+
+![Correlation Matrix](D:\Documents\Hackathon\Correlation_Matrix.PNG)
+
+Positive correlations are displayed in blue and negative correlations in red color.
+Color intensity and the size of the circle are proportional to the correlation coefficients. 
+In the right side of the correlogram, the legend color shows the correlation coefficients and the corresponding colors.
+
+
+##### Selection of variables for Model building
+
+After careful examination, the variable var2 can be dropped as its correlation value to the dependent varaiable is -0.0069
+
+#### Date Format
+
+Dates are splitted into two frame **mon** and **year** in order to change the dataset with changing month and year for the prediction. In other words, with each iteration
+the only current month and year will be considered for the prediction of electricity consumption for the last 7 or 6 days of the current month.
+
+##### Split the date into month into year and month for both train and test data file
+
+```{r,eval=FALSE}
+data$datetime<- as.Date(data$datetime)
+data$year<- as.numeric(format(data$datetime, format = "%Y"))
+data$mon<-as.numeric(format(data$datetime,format = "%m"))
+
+## Format test data file
+test$datetime<- as.Date(test$datetime, "%d-%m-%Y")
+test$year<- as.numeric(format(test$datetime, format = "%Y"))
+test$mon<-as.numeric(format(test$datetime,format = "%m"))
+```
+
+
+##### Create the function to count the number of rows in dataset as the dataset unfold with changing months and years
+
+I have used the dataset in such a way that dataset unfolds with respective changing month and year. For that, I have build a function using dplyr package in the following manner,
+
+```{r,eval= FALSE}
+
+Run_count=function(Month,Year){
+  ## Dynamic Dataset
+  data1=data%>% filter(mon<=Month & year<=Year)
+  return(nrow(data1))
+}
+
+Run_count(12,2017)
+Output: 26496
+
+Run_count(6,2016)
+Output: 9936
+```
+Its clear, the above function is working properly. This will be used in the final model.
+
+
+#### Build the user defined function for Training Model
+
+In this section "newdata" frame is created for each month and year for the prediction of values from 24th to 31st or 30th of the current month.
+For prediction, generalised regression boosted model had been used.
+
+```{r, eval=FALSE}
+Run_pred=function(Month,Year){
+  newdata=test%>%select(ID,temperature,var1,pressure,windspeed,year,mon)%>%filter(mon==Month & year== Year)
+  ## Dynamic Dataset
+  data1=data%>% filter(mon<=Month & year<=Year)
+  
+gbmM1<-gbm(electricity_consumption~temperature+var1+pressure+windspeed,
+             distribution="gaussian",interaction.depth=3, n.cores=detectCores()/2, 
+             n.trees = 2500,shrinkage = 0.001, data = data1 )
+  gbmTrainPredictions <- predict.gbm(object=gbmM1, newdata=newdata, n.trees=2500, 
+                                     type="response")
+  sample<-data.frame(paste(newdata$ID,gbmTrainPredictions))
+  return(sample)
+}
+```
+
+#### User defined function for each month and year to compute the prediction values
+
+##### Standalone UDF for 2013 as this has only 5 months
+```{r,eval=FALSE}
+Pred_Year=function(x){y<-NULL;
+  for(j in unique(7:12)){t<-Run_pred(j,x)
+  y<-rbind(y,t)}
+  return(y)
+}
+
+Pred_2013<-Pred_Year(2013)
+```
+##### General UDF for all the years
+
+```{r,eval=FALSE}
+Pred_Year=function(x){y<-NULL;
+for(j in unique(1:12))
+{t<-Run_Pred(j,x)
+  y<-rbind(y,t)}
+return(y)
+}
+
+Pred_2014<-Pred_Year(2014)
+Pred_2015<-Pred_Year(2015)
+Pred_2016<-Pred_Year(2016)
+Pred_2017<-Pred_Year(2017)
+```
+
+#### Combine the data in one file
+So far all the prediction values has been calculated by the above function and store under respective years with confined dataset as mentioned in the problem statement.
+Now its time to combine all the data together into one file, sample_submission.
+
+#####Rbind
+
+```{r,eval=FALSE}
+Sample_Submission<-data.frame(rbind(Pred_2013,Pred_2014,Pred_2015,Pred_2016,Pred_2017))
+
+sample_submission<-write.csv(Sample_Submission,"sample_submission.csv")
+```
+
