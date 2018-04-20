@@ -1,0 +1,149 @@
+---
+title: "Random Forest on Wine_Tuning Hyperparameters"
+output:
+  html_document:
+    df_print: paged
+---
+
+## Load the necessary packages and dataset
+
+```{r, message = FALSE, warning=FALSE}
+## Set the working directory and load necessary packages,
+
+library(randomForest)
+library(caTools)
+library(caret)
+
+setwd("D:/Documents/R_Projects/Data_Camp_Tutorials/Machine_Learning_Toolbox")
+wine=read.csv("wine_dataset.csv",stringsAsFactors = FALSE)
+# Fit random forest: model
+model <- train(
+  quality~.,
+  tuneLength = 3,
+  data = wine, method = "ranger",
+  trControl = trainControl(method = "cv", number = 5, verboseIter = TRUE)
+)
+
+# Print model to console
+
+print(model)
+
+## Plot the model
+
+plot(model)
+
+
+```
+
+## Tuning the model,
+
+![Hyperparameter](D:/Documents/R_Projects/Data_Camp_Tutorials/Machine_Learning_Toolbox/hyperparameter.JPG)
+
+
+```{r, warning = FALSE,eval = FALSE ,message = FALSE}
+
+Sonar = read.csv("sonar.csv", stringsAsFactors = FALSE)
+
+# Fit random forest: model
+model <- train(
+  quality~.,
+  tuneLength = 3,
+  data = wine, method = "ranger",
+  trControl = trainControl(method = "cv", number = 5, verboseIter = TRUE)
+)
+
+# Print model to console
+
+print(model)
+# Plot model
+
+plot(model)
+
+```
+
+
+## Introducing glmnet()
+
+![glment](D:/Documents/R_Projects/Data_Camp_Tutorials/Machine_Learning_Toolbox/glmnet1.JPG)
+
+![glment](D:/Documents/R_Projects/Data_Camp_Tutorials/Machine_Learning_Toolbox/glmnet2.JPG)
+
+![glment](D:/Documents/R_Projects/Data_Camp_Tutorials/Machine_Learning_Toolbox/glmnet3.JPG)
+
+```{r, eval = FALSE}
+
+# Create custom trainControl: myControl
+myControl <- trainControl(
+  method = "cv", number = 10,
+  summaryFunction = twoClassSummary,
+  classProbs = TRUE, # IMPORTANT!
+  verboseIter = TRUE
+)
+
+# Fit glmnet model: model
+model <- train(
+  y~., overfit,
+  method = "glmnet",
+  trControl = myControl
+)
+
+# Print model to console
+print(model)
+
+# Print maximum ROC statistic
+
+print(max(model$results))
+
+
+## Tuning the glmnet
+
+# Train glmnet with custom trainControl and tuning: model
+model <- train(
+  y~ ., overfit,
+  tuneGrid = expand.grid(alpha = 0:1 ,
+  lambda = seq(0.0001,1,length = 20)),
+  method = "glmnet",
+  trControl = myControl
+)
+
+# Print model to console
+print(model)
+
+# Print maximum ROC statistic
+print(max(model[["results"]][["ROC"]]))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

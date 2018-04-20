@@ -1,0 +1,299 @@
+---
+title: "Capturing"
+output: html_notebook
+---
+
+## capture()
+
+In rebus, to denote a part of a regular expression you want to capture, you surround it with the function capture(). For example, a simple pattern to match an email address might be,
+
+``email <- one_or_more(WRD) %R% 
+"@" %R% one_or_more(WRD) %R% 
+DOT %R% one_or_more(WRD)``
+
+``str_view("(wolverine@xmen.com)", pattern = email)``
+
+If you want to capture the part before the @, you simply wrap that part of the regular expression in capture():
+
+``email <- capture(one_or_more(WRD)) %R% 
+  "@" %R% one_or_more(WRD) %R% 
+  DOT %R% one_or_more(WRD)``
+  
+``str_view("(wolverine@xmen.com)", pattern = email)`` 
+The part of the string that matches hasn't changed, but if we pull out the match with str_match() we get access to the captured piece:
+
+str_match("(wolverine@xmen.com)", pattern =  email)  
+
+```{r, eval =FALSE}
+## Detecting email address
+
+# Capture part between @ and . and after .
+email <- capture(one_or_more(WRD)) %R% 
+  "@" %R% capture(one_or_more(WRD)) %R% 
+  DOT %R% capture(one_or_more(WRD))
+
+# Check match hasn't changed
+str_view(hero_contacts, pattern = email)
+
+# Pull out match and captures
+email_parts <- str_match(hero_contacts, pattern = email)
+
+# Print email_parts
+print(email_parts)
+
+# Save host
+host <- email_parts[,3]
+host
+
+```
+
+## Capturing the Phone numbers
+
+```{r, eval = FALSE}
+
+## Capturing phone numbers
+
+# View text containing phone numbers
+## load the contact list from working directory
+
+# Add capture() to get digit parts
+phone_pattern <- capture(three_digits) %R% zero_or_more(separator) %R% 
+           capture(three_digits) %R% zero_or_more(separator) %R%
+           capture(four_digits)
+           
+# Pull out the parts with str_match()
+phone_numbers <- str_match(contact, pattern = phone_pattern)
+
+# Put them back together
+str_c("(",
+  phone_numbers[,2],
+  ")",
+  phone_numbers[,3],
+  "-",
+  phone_numbers[,4])
+
+```
+
+## Extracting age and gender again
+
+
+```{r, eval = FALSE}
+
+# narratives has been pre-defined
+narratives
+
+# Add capture() to get age, unit and sex
+pattern <- capture(optional(DGT) %R% DGT) %R%  
+  optional(SPC) %R% capture(or("YO", "YR", "MO")) %R%
+  optional(SPC) %R% capture(or("M", "F"))
+
+# Pull out from narratives
+
+str_match(narratives, pattern = pattern)
+
+# Edit to capture just Y and M in units
+pattern2 <- capture(optional(DGT) %R% DGT) %R%  
+  optional(SPC) %R% capture(or("Y", "M")) %R% optional(or("O","R")) %R%
+  optional(SPC) %R% capture(or("M", "F"))
+
+# Check pattern
+str_view(narratives, pattern = pattern2)
+
+# Pull out pieces
+
+str_match(narratives, pattern = pattern2)
+
+```
+
+## Backreferences
+
+``str_view(c("hello", "sweet", "kitten"), 
+  pattern = capture(LOWER) %R% REF1)``
+  
+```{r, eval = FALSE}
+# See names with three repeated letters
+repeated_three_times <- capture(LOWER) %R% REF1 %R% REF1
+str_view(boy_names, 
+  pattern = repeated_three_times, 
+  match = TRUE)
+
+# See names with a pair of repeated letters
+pair_of_repeated <- capture(LOWER %R% LOWER) %R% REF1
+str_view(boy_names, 
+  pattern = pair_of_repeated, 
+  match = TRUE)
+
+# See names with a pair that reverses
+pair_that_reverses <- capture(LOWER) %R% capture(LOWER) %R% REF2 %R% REF1
+str_view(boy_names, 
+  pattern = pair_that_reverses, 
+  match = TRUE)
+
+# See four letter palindrome names
+four_letter_palindrome <- exactly(capture(LOWER) %R% capture(LOWER) %R% 
+      REF2 %R% REF1)
+str_view(boy_names, 
+  pattern = four_letter_palindrome, 
+  match = TRUE)
+
+# See six letter palindrome names
+six_letter_palindrome <- exactly(
+    capture(LOWER) %R% capture(LOWER) %R% capture(LOWER) %R% 
+      REF3 %R% REF2 %R% REF1)
+str_view(boy_names, 
+  pattern = six_letter_palindrome, 
+  match = TRUE)
+
+```
+
+
+## Str_replace_all()
+
+```{r, eval = FALSE}
+
+# View text containing phone numbers
+contact
+
+# Replace digits with "X"
+str_replace(contact, pattern = DGT, replacement = "X")
+
+# Replace all digits with "X"
+str_replace_all(contact, pattern = DGT, replacement = "X")
+
+# Replace all digits with different symbol
+str_replace_all(contact, pattern = DGT, 
+  replacement = c("X", ".", "*", "_"))
+
+```
+
+## Replacing with backreferences
+
+str_c(REF1, REF2)
+
+
+```{r, eval = FALSE}
+
+# Build pattern to match words ending in "ING"
+pattern <- one_or_more(WRD) %R% "ING"
+str_view(narratives, pattern)
+
+# Test replacement
+str_replace(narratives, capture(pattern), 
+  str_c("CARELESSLY", REF1, sep = " "))
+
+# One adverb per narrative
+adverbs_10 <- sample(adverbs, 10)
+
+# Replace "***ing" with "adverb ***ing"
+str_replace(narratives, 
+  capture(pattern),
+  str_c(adverbs_10, REF1, sep = " "))  
+
+````
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```
+

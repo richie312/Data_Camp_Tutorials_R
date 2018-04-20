@@ -1,0 +1,87 @@
+---
+title: "Confusion Matrix"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r, eval = FALSE}
+library(caret)
+library(caTools)
+
+## Data used is Sonar
+
+model<- glm(df$price~., data = train, family = binomial("logit"))
+
+## Prediction
+p<- predict(model, test, type = "Response")
+p_class<- ifelse(p>0.5, "M", "R")
+table(p_class)
+
+confusionMatrix(p_class, test$Class)
+
+
+# Apply threshold of 0.9: p_class
+p_class<- ifelse(p>0.9, "M", "R")
+
+# Create confusion matrix
+
+confusionMatrix(p_class, test$Class)
+
+# Apply threshold of 0.10: p_class
+p_class<- ifelse(p>0.10, "M","R")
+
+# Create confusion matrix
+confusionMatrix(p_class, test$Class)
+
+
+```
+
+## ROC
+
+```{r, eval = FALSE}
+
+# Predict on test: p
+p<- predict(model, test, type = "response")
+p_class<- ifelse(p>0.6, "M", "R")
+
+# Make ROC curve
+colAUC(p, test$Class, plotROC = TRUE)
+```
+
+### Customizing trainControl
+
+
+```{r, eval = FALSE}
+
+# Create trainControl object: myControl
+myControl <- trainControl(
+  method = "cv",
+  number = 10,
+  summaryFunction = twoClassSummary,
+  classProbs = TRUE, # IMPORTANT!
+  verboseIter = TRUE
+)
+
+## train the model
+
+# Train glm with custom trainControl: model
+model <- train(Class ~ ., Sonar, method = "glm",
+               trControl = myControl)
+
+# Print model to console
+model
+
+```
+
+
+
+
+
+
+
+
+
+

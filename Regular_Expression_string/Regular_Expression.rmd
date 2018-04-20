@@ -208,6 +208,76 @@ str_view(boy_names,
 
 
 ```{r, eval = FALSE}
+## MAke list of contact
+
+ ## load the workspace with contact
+
+# Take a look at ALL digits
+str_view_all(contact, DGT)
+
+# Create a three digit pattern and test
+three_digits <- DGT %R% DGT %R% DGT
+str_view_all(contact,
+  pattern = three_digits)
+
+# Create four digit pattern
+four_digits <- three_digits %R% DGT
+
+# Create a separator pattern and test
+separator <- char_class("-.() ")
+str_view_all(contact,
+  pattern = separator)
+
+# Create phone pattern
+phone_pattern <- optional(OPEN_PAREN) %R% 
+  three_digits %R% 
+  zero_or_more(separator) %R% 
+  three_digits %R% 
+  zero_or_more(separator) %R%
+  four_digits
+        
+# Test pattern           
+str_view(contact, pattern = phone_pattern)
+
+# Extract phone numbers
+str_extract(contact, phone_pattern)
+
+# Extract ALL phone numbers
+str_extract_all(contact, phone_pattern)
+
+## more practice with narratives file
+
+## Load the workspace with narratives
+
+capture.output(narratives, file = "D:/Documents/R_Projects/Data_Camp_Tutorials/Regular_Expression_string/narrative.txt")
+
+# Look for two digits
+str_view(narratives, pattern = DGT %R% DGT)
+
+# Pattern to match one or two digits
+age <-DGT %R% or(" ", DGT)
+str_view(narratives, 
+  pattern = age)
+
+# Pattern to match units 
+unit <- optional(SPC) %R% or("YO","YR","MO")
+
+# Test pattern with age then units
+str_view(narratives, 
+  pattern = age %R% unit)
+
+# Pattern to match gender
+gender <- optional(SPC) %R% or("M","F")
+
+# Test pattern with age then units then gender
+str_view(narratives, 
+  pattern = age %R% unit %R% gender)
+
+# Extract age_gender, take a look
+age_gender <- str_extract_all(narratives, pattern =  age %R% unit %R% gender)
+age_gender
+
+```
 
 
 
