@@ -51,13 +51,9 @@ pacman::p_load(shiny,shinydashboard,gbm, randomForest,ggplot2,ipred,caret,ROCR,d
 
 
 model = function(algo =gbm ,distribution = 'bernoulli', 
-                 type = 'response', set='AUC',method ='randomForest',n.trees=10000){
-  
-  if(method == "randomForest"){
+                 type = 'response', set='AUC',n.trees=10000){
+  ## Fit the model
     
-    train$default = as.factor(train$default)
-    ## Fit the model
-  
     model<- algo(formula = default ~ ., 
                  distribution = distribution,
                  data = train,
@@ -70,61 +66,40 @@ model = function(algo =gbm ,distribution = 'bernoulli',
                    newdata = test,
                    n.trees = n.trees,
                    type = type)
-
+    
     ## Generate the test set AUCs using the pred
     
     AUC<- auc(actual = test$default, predicted = pred)
+    
+  
+  
+  if (set == 'AUC'){
+    return(AUC)
   }
-    if (method !='randomForest') {
-       
-      ## Fit the model
-      
-      model<- algo(formula = default ~ ., 
-                   distribution = distribution,
-                   data = train,
-                   n.trees = n.trees,
-                   cv.fold= 3)
-      
-      ## Generate the prediction on the test set
-      
-      pred<- predict(object = model,
-                     newdata = test,
-                     n.trees = n.trees,
-                     type = type)
-      
-      ## Generate the test set AUCs using the pred
-      
-      AUC<- auc(actual = test$default, predicted = pred)
-      
-    }
+  
+  if (set == 'predictions'){
+    return(pred)
+  }
+  if (set == 'model'){
+    return(model)
     
-    if (set == 'AUC'){
-      return(AUC)
-    }
-    
-    if (set == 'predictions'){
-      return(pred)
-    }
-    if (set == 'model'){
-      return(model)
-      
-    }
-    else
-      return(NULL)
-
-}
+  }
+  else
+    return(NULL)
+  
+} 
 
 
 
 ## get the AUC for different algo
 
- get_auc= function(algo, type,n.trees,method){
+ get_auc= function(algo, type,n.trees){
     z = model(algo = algo,type = type, set ='AUC')
 }
 
  
-GBM_auc = get_auc(gbm, method = 'gbm')
-RF_auc = get_auc(randomForest, type ='response',method='randomForest')
+GBM_auc = get_auc(algo = gbm, type='response')
+RF_auc = get_auc(randomForest, type ='response')
 BAG_auc = get_auc(bagging, type ='class')
 
 ## Make a list of predictions
@@ -145,13 +120,13 @@ pred_list<-list(BAG_preds,RF_pred, GBM_pred)
 
 ## List of different models
 
-get_model<- function(algo,type = 'response', ntrees = 10000, method){
+get_model<- function(algo,type = 'response', ntrees = 10000){
   z= model(algo = algo, type= type, set = 'model')
   
 }
 
 Bag_model<- get_model(algo = bagging, type='prob')
-RF_model<- get_model(algo = randomForest,method ='randomForest')
+RF_model<- get_model(algo = randomForest)
 GBM_model<- get_model(algo = gbm)
 
 
@@ -197,6 +172,14 @@ GBM_A<-get_auc(algo = gbm,type='response',n.trees = ntree_gbm_cv)
 
 ## optimisation for Random Forest by grid search which imcludes mtry and ntrees
 
+## To optimise random forest, response variable has to be converted into factors
+
+## lets create seperate dataset for random Forest
+
+train_rf<- train
+test_rf<-test
+train_rf$default<-as.factor(train_rf$default)
+
 # Establish a list of possible values for mtry, nodesize and sampsize
 mtry <- seq(1, ncol(train) * 0.8, 2)
 nodesize <- seq(3, 8, 2)
@@ -212,8 +195,8 @@ oob_err <- c()
 for (i in 1:nrow(hyper_grid)) {
   
   # Train a Random Forest model
-  model <- randomForest(as.factor(train$default) ~ ., 
-                        data = train,
+  model <- randomForest(train_rf$default ~ ., 
+                        data = train_rf,
                         distribution ='bernoulli',
                         mtry = hyper_grid$mtry[i],
                         nodesize = hyper_grid$nodesize[i],
@@ -230,14 +213,31 @@ optimal_grid_options<-print(hyper_grid[opt_i,])
 
 
 
+## Runing the model with optimum set of values 
+
+model_rf<-randomForest(train_rf$default ~ ., 
+                                    data = train_rf,
+                                    distribution ='bernoulli',
+                                    mtry = optimal_grid_options[[1]],
+                                    nodesize = hyper_grid$nodesize[[2]],
+                                    sampsize = hyper_grid$sampsize[[3]],
+                                    ntrees = 10000)
+predict_opt<-predict(object = model,
+                      newdata = test_rf,
+                      n.trees = 10000,
+                      type = 'response')
+
+                       
+model_rf_AUC<-auc(actual = test$default, predicted = predict_opt)
 
 
+z<-randomForest(as.factor(train$default)~.,
+                data = train)
+predict_z<-predict(object = model,
+                   newdata = test,
+                   type='prob')
 
-
-
-
-
-
+predict_z_auc<-auc(actual = test$default, predicted = predict_opt[,2])
 
 
 
