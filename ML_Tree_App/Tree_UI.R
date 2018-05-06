@@ -1,7 +1,7 @@
 ## Set the working directory
 setwd("D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree_App")
 
-
+set.seed(123)
 ## load the dataset
 data_x = read.csv("credit.csv")
 
@@ -94,13 +94,13 @@ model = function(algo =gbm ,distribution = 'bernoulli',
 ## get the AUC for different algo
 
  get_auc= function(algo, type,n.trees){
-    z = model(algo = algo,type = type, set ='AUC')
+    z = model(algo = algo,type = type, set = 'AUC')
 }
 
  
 GBM_auc = get_auc(algo = gbm, type='response')
-RF_auc = get_auc(randomForest, type ='response')
-BAG_auc = get_auc(bagging, type ='class')
+RF_auc =  get_auc(algo = randomForest, type ='response')
+BAG_auc = get_auc(algo = bagging, type ='class')
 
 ## Make a list of predictions
 
