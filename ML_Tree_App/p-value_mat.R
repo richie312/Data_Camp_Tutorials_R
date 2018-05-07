@@ -1,3 +1,5 @@
+
+## p-significance test
 cor.mtest <- function(mat, ...) {
   mat <- as.matrix(mat)
   n <- ncol(mat)
@@ -15,3 +17,10 @@ cor.mtest <- function(mat, ...) {
 
 p.mat <- cor.mtest(mtcars)
 head(p.mat[, 1:5])
+
+## Mode Function
+
+Mode <- function(x) { 
+  ux <- sort(unique(x))
+  ux[which.max(tabulate(match(x, ux)))] 
+}

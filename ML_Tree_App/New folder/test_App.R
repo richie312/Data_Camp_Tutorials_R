@@ -15,11 +15,10 @@ ui<- shinyUI(fluidPage(
              
              (titlePanel("Data ToolBar")),
              
-             
              sidebarLayout(
                
                sidebarPanel( includeCSS("mystyle.css"),
-                             fileInput(inputId = "file",label = "Upload the file"), # fileinput() function is used to get the file upload contorl option
+                             fileInput(inputId = "file",label = "File", buttonLabel="Upload"), # fileinput() function is used to get the file upload contorl option
                              helpText("Default max. file size is 100MB"),
                              tags$hr(),
                              h5(helpText("Select the read.table parameters below")),
@@ -45,11 +44,11 @@ ui<- shinyUI(fluidPage(
                ),position = c("left", "right")
                
              )
-    ),
+          ),
     
-    tabPanel("Data Modelling", value = "Model",style="color: #FF7D33",
+          tabPanel("Data Modelling", value = "Model",style="color: #FF7D33",
              
-             (titlePanel("Pre-Processing and Modelling")),
+                  (titlePanel("Pre-Processing and Modelling")),
              
              
              sidebarLayout(
@@ -57,16 +56,19 @@ ui<- shinyUI(fluidPage(
                sidebarPanel( titlePanel("Missing Values"),
                              tags$hr(),
                              h5(helpText("Select the Appropriate Missing Imputation criterion")),
-                             
-                             br(),br(),
+                             br(),
                              radioButtons(inputId = 'Imputation', label = 'Variable', 
                                           choices = c(Continous="Continous",Categorical = "Categorical"), 
                                           selected = "Continous"),
+                             br(),
+                             actionButton(inputId = "Impute", label = "Impute"),
                              tags$hr(),
                              h5(helpText("Select the Appropriate scaling and centering (if required) criterion")),
                              radioButtons(inputId = 'Scaling', label = 'Scaling & Centering', 
                                           choices = c(Normalization ="Normalization",Standardization = "Standardization"), 
                                           selected = "Standardization"),
+                             br(),
+                             actionButton(inputId = "scale", label="Scale/center"),
                              tags$hr(),
                              h5(helpText("Split the Dataset")),
                              br(),br(),
@@ -90,21 +92,12 @@ ui<- shinyUI(fluidPage(
                
                mainPanel(
                  
-                 tableOutput("table"),
-                 br(), br(),
-                 width = 9,
-                 h5(helpText("",
-                             style="color: #FF7D33")),
-                 plotOutput('plot')
+               
                  
                  
                )
                
-               
-               
-               
-               
-             )
+            )
              
     ),
     tabPanel("ROC & Confusion Matrix", value ="ROC", style="color: #FF7D33",
@@ -135,21 +128,13 @@ ui<- shinyUI(fluidPage(
                
                mainPanel(
                  
-                 tableOutput("table"),
-                 br(), br(),
-                 width = 9,
-                 h5(helpText("",
-                             style="color: #FF7D33")),
-                 plotOutput('plot')
+               
                  
                  
                )
                
              )
-             
-             
-             
-    ),
+          ),
     
     tabPanel("Optimization and Tuning", value="Optimization", style="color: #FF7D33",
              (titlePanel("Hyperparameter Tuning")),
@@ -185,21 +170,15 @@ ui<- shinyUI(fluidPage(
                
                mainPanel(
                  
-                 tableOutput("table"),
-                 br(), br(),
-                 width = 9,
-                 h5(helpText("",
-                             style="color: #FF7D33")),
-                 plotOutput('plot')
                  
                  
                )
                
              )
              
-    ) 
+          ) 
+      )
   )
-)
 )
 
 

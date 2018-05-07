@@ -15,11 +15,10 @@ ui<- shinyUI(fluidPage(
              
              (titlePanel("Data ToolBar")),
              
-             
              sidebarLayout(
                
                sidebarPanel( includeCSS("mystyle.css"),
-                             fileInput(inputId = "file",label = "Upload the file"), # fileinput() function is used to get the file upload contorl option
+                             fileInput(inputId = "file",label = "File", buttonLabel="Upload"), # fileinput() function is used to get the file upload contorl option
                              helpText("Default max. file size is 100MB"),
                              tags$hr(),
                              h5(helpText("Select the read.table parameters below")),
@@ -55,54 +54,48 @@ ui<- shinyUI(fluidPage(
              sidebarLayout(
                
                sidebarPanel( titlePanel("Missing Values"),
-                 tags$hr(),
-                 h5(helpText("Select the Appropriate Missing Imputation criterion")),
-                 
-                 br(),br(),
-                 radioButtons(inputId = 'Imputation', label = 'Variable', 
-                              choices = c(Continous="Continous",Categorical = "Categorical"), 
-                              selected = "Continous"),
-                 tags$hr(),
-                 h5(helpText("Select the Appropriate scaling and centering (if required) criterion")),
-                 radioButtons(inputId = 'Scaling', label = 'Scaling & Centering', 
-                              choices = c(Normalization ="Normalization",Standardization = "Standardization"), 
-                              selected = "Standardization"),
-                 tags$hr(),
-                 h5(helpText("Split the Dataset")),
-                 br(),br(),
-                 sliderInput(inputId = "split_ratio", label="Split Ratio", min=0, max=1, value = 10),
-                 actionButton(inputId = "Split", label="Split"),
-                 br(), br(),
-                 tags$hr(),
-                 h5(helpText("Select the Model")),
-                 selectInput(inputId = "Model", label= "Model",c("Decision Tree","Random Forest",
-                                                                 "GBM", "Bagging")),
-                 br(),
-                 sliderInput(inputId = "nTrees", label="nTrees", min=0, max=10000, value = 10000),
-                 br(),
-                 selectInput(inputId = 'cv', label = 'Cross Validation', c(2,3,4,5,6,7,8,9,10))
-                 
-                ),
+                             tags$hr(),
+                             h5(helpText("Select the Appropriate Missing Imputation criterion")),
+                             br(),
+                             radioButtons(inputId = 'Imputation', label = 'Variable', 
+                                          choices = c(Continous="Continous",Categorical = "Categorical"), 
+                                          selected = "Continous"),
+                             br(),
+                             actionButton(inputId = "Impute", label = "Impute"),
+                             tags$hr(),
+                             h5(helpText("Select the Appropriate scaling and centering (if required) criterion")),
+                             radioButtons(inputId = 'Scaling', label = 'Scaling & Centering', 
+                                          choices = c(Normalization ="Normalization",Standardization = "Standardization"), 
+                                          selected = "Standardization"),
+                             br(),
+                             actionButton(inputId = "scale", label="Scale/center"),
+                             tags$hr(),
+                             h5(helpText("Split the Dataset")),
+                             br(),br(),
+                             sliderInput(inputId = "split_ratio", label="Split Ratio", min=0, max=1, value = 10),
+                             actionButton(inputId = "Split", label="Split"),
+                             br(), br(),
+                             tags$hr(),
+                             h5(helpText("Select the Model")),
+                             selectInput(inputId = "Model", label= "Model",c("Decision Tree","Random Forest",
+                                                                             "GBM", "Bagging")),
+                             br(),
+                             sliderInput(inputId = "nTrees", label="nTrees", min=0, max=10000, value = 10000),
+                             br(),
+                             selectInput(inputId = 'cv', label = 'Cross Validation', c(2,3,4,5,6,7,8,9,10))
+                             
+               ),
                
                
                
-            
+               
                
                mainPanel(
                  
-                 tableOutput("table"),
-                 br(), br(),
-                 width = 9,
-                 h5(helpText("",
-                             style="color: #FF7D33")),
-                 plotOutput('plot')
+                 
                  
                  
                )
-               
-               
-               
-               
                
              )
              
@@ -135,70 +128,56 @@ ui<- shinyUI(fluidPage(
                
                mainPanel(
                  
-                 tableOutput("table"),
-                 br(), br(),
-                 width = 9,
-                 h5(helpText("",
-                             style="color: #FF7D33")),
-                 plotOutput('plot')
+                 
                  
                  
                )
                
              )
-               
-               
-               
-             ),
+    ),
+    
+    tabPanel("Optimization and Tuning", value="Optimization", style="color: #FF7D33",
+             (titlePanel("Hyperparameter Tuning")),
              
-             tabPanel("Optimization and Tuning", value="Optimization", style="color: #FF7D33",
-                      (titlePanel("Hyperparameter Tuning")),
-                      
-                      
-                      sidebarLayout(
-                        
-                        sidebarPanel( titlePanel("Optimization"),
-                                      tags$hr(),
-                                      h5(helpText("Select the Model for Optimization")),
-                                      radioButtons(inputId = 'Optimization', label = 'Optimization', 
-                                                   choices = c("DecisionTree", "GBM","RandomForest","Bagging"), 
-                                                   selected = "RandomForest"),
-                                      br(),
-                                      actionButton(inputId ="get_opt", label = "Get Optmisation Value"),
-                                      br(),br(),
-                                      actionButton(inputId = "Predict", label= "Predict on test set"),
-                                      br(),br(),
-                                      actionButton(inputId = "Compare", label = "Plot and Compare"),
-                                      br(), br(),
-                                      fileInput(inputId = "test_file", label = "Unseen Test File"),
-                                      br(), br(),
-                                      actionButton(inputId = "Predict2", label= "Predict on unseen test set"),
-                                      br(), br(),
-                                      downloadButton(outputId = "submission", label="Download Submission File")
-                                      
-                                      
-                        ),
-                        
-                        
-                        
-                        
-                        
-                        mainPanel(
-                          
-                          tableOutput("table"),
-                          br(), br(),
-                          width = 9,
-                          h5(helpText("",
-                                      style="color: #FF7D33")),
-                          plotOutput('plot')
-                          
-                          
-                        )
-                        
-                 )
-  
-              ) 
-    )
+             
+             sidebarLayout(
+               
+               sidebarPanel( titlePanel("Optimization"),
+                             tags$hr(),
+                             h5(helpText("Select the Model for Optimization")),
+                             radioButtons(inputId = 'Optimization', label = 'Optimization', 
+                                          choices = c("DecisionTree", "GBM","RandomForest","Bagging"), 
+                                          selected = "RandomForest"),
+                             br(),
+                             actionButton(inputId ="get_opt", label = "Get Optmisation Value"),
+                             br(),br(),
+                             actionButton(inputId = "Predict", label= "Predict on test set"),
+                             br(),br(),
+                             actionButton(inputId = "Compare", label = "Plot and Compare"),
+                             br(), br(),
+                             fileInput(inputId = "test_file", label = "Unseen Test File"),
+                             br(), br(),
+                             actionButton(inputId = "Predict2", label= "Predict on unseen test set"),
+                             br(), br(),
+                             downloadButton(outputId = "submission", label="Download Submission File")
+                             
+                             
+               ),
+               
+               
+               
+               
+               
+               mainPanel(
+                 
+                 
+                 
+               )
+               
+             )
+             
+    ) 
+  )
 )
 )
 
