@@ -1,9 +1,8 @@
-## Set the working directory
-setwd("D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree_App/New folder/www")
+## Load the necessary packages
 
 library(shiny)
 library(shinythemes)
-
+PATH<-"D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree_App/New folder/www/mystyle.css"
 ui<- shinyUI(fluidPage(
   theme = shinytheme("darkly"),
   themeSelector(),
@@ -17,8 +16,12 @@ ui<- shinyUI(fluidPage(
              
              sidebarLayout(
                
-               sidebarPanel( includeCSS("mystyle.css"),
-                             fileInput(inputId = "file",label = "File", buttonLabel="Upload"), # fileinput() function is used to get the file upload contorl option
+               sidebarPanel( includeCSS(PATH),
+                             fileInput(inputId = "file",label = "File", buttonLabel="Upload",
+                                       accept = c(
+                                         "text/csv",
+                                         "text/comma-separated-values,text/plain",
+                                         ".csv")),
                              helpText("Default max. file size is 100MB"),
                              tags$hr(),
                              h5(helpText("Select the read.table parameters below")),
@@ -41,7 +44,7 @@ ui<- shinyUI(fluidPage(
                  plotOutput('plot')
                  
                  
-               ),position = c("left", "right")
+               )
                
              )
     ),
@@ -58,8 +61,8 @@ ui<- shinyUI(fluidPage(
                              h5(helpText("Select the Appropriate Missing Imputation criterion")),
                              br(),
                              radioButtons(inputId = 'Imputation', label = 'Variable', 
-                                          choices = c(Continous="Continous",Categorical = "Categorical"), 
-                                          selected = "Continous"),
+                                          choices = c("Continous", "Categorical", "Both"), 
+                                          selected = "Both"),
                              br(),
                              actionButton(inputId = "Impute", label = "Impute"),
                              tags$hr(),
@@ -91,6 +94,7 @@ ui<- shinyUI(fluidPage(
                
                
                mainPanel(
+                 tableOutput("table_Imputation")
                  
                  
                  
@@ -192,7 +196,7 @@ server<- shinyServer(function(input,output){
   data <- reactive({
     file1 <- input$file
     if(is.null(file1)){return()} 
-    read.table(file=file1$datapath, sep=input$sep, header = input$header, stringsAsFactors = input$stringAsFactors)
+    read.csv(file=file1$datapath, sep=input$sep, header = input$header, stringsAsFactors = input$stringAsFactors)
     
   })
   
@@ -222,12 +226,15 @@ server<- shinyServer(function(input,output){
   
   
   
+  
+  
   event<-eventReactive(input$plot, {
     col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
     library(corrplot)
-    source("D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree_App/p-value_mat.R")
+    source("D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree_App/functions.R")
     library(RColorBrewer)
     runif(input$plot == 1)
+    
     num<-cor(data_num())
     par(mfrow=c(1,2))
     corrplot(num, method ='color',type='upper',tl.col='black',
@@ -241,6 +248,34 @@ server<- shinyServer(function(input,output){
   
   )
   output$plot<- renderPlot({event()})
+  
+  ## Imputation for missing values
+  ## For numeric variables
+  
+  
+  num_na<-reactive({
+    file1<-input$file
+    temp1<-read.table(file=file1$datapath, sep=input$sep, 
+               header = input$header, stringsAsFactors = input$stringAsFactors)
+  # create logical set for numeric columns
+  i1<- sapply(temp1, is.numeric)
+  temp1[i1]<-lapply(temp[i1], function(x) replace(x,is.na(x), mean(x[!is.na(x)])))
+  temp1
+ })
+      
+  
+  event_impute<-eventReactive(input$Impute, {
+    source("D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree_App/functions.R")
+    runif(input$Impute == 1)
+    head(num_na())
+     
+  })
+  
+  output$table_Imputation<- renderTable({
+   event_impute()
+  
+  })
+  
 }
 )
 
