@@ -218,9 +218,12 @@ server<- shinyServer(function(input,output){
   data_num<-reactive({
     file1 <- input$file
     if(is.null(file1)){return()} 
-    temp<- read.table(file=file1$datapath, sep=input$sep, header = input$header, stringsAsFactors = input$stringAsFactors)
+    temp<- read.csv(file=file1$datapath, sep=input$sep, header = input$header, stringsAsFactors = input$stringAsFactors)
     temp<-as.data.frame(lapply(temp, as.factor))
     temp<-as.data.frame(lapply(temp, as.numeric))
+    ## Missing values
+    temp[,sapply(temp,is.numeric)]<-lapply(temp[,sapply(temp,is.numeric)], function(x) replace(x, is.na(x), mean(x[!is.na(x)])))
+    temp[,!sapply(temp,is.numeric)]<-lapply(temp[,!sapply(temp,is.numeric)], function(x) replace(x, is.na(x), Mode(x[!is.na(x)])))
     temp
   })
   
@@ -255,19 +258,46 @@ server<- shinyServer(function(input,output){
   
   num_na<-reactive({
     file1<-input$file
-    temp1<-read.table(file=file1$datapath, sep=input$sep, 
+    temp1<-read.csv(file=file1$datapath, sep=input$sep, 
                header = input$header, stringsAsFactors = input$stringAsFactors)
   # create logical set for numeric columns
-  i1<- sapply(temp1, is.numeric)
-  temp1[i1]<-lapply(temp[i1], function(x) replace(x,is.na(x), mean(x[!is.na(x)])))
-  temp1
- })
-      
+  
+    temp1[,sapply(temp1,is.numeric)]<-lapply(temp1[,sapply(temp1,is.numeric)], function(x) replace(x, is.na(x), mean(x[!is.na(x)])))
+    temp1
+})
+  categorical_na<-reactive({
+    source("D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree_App/functions.R")
+    file1<-input$file
+    temp2<-read.csv(file=file1$datapath, sep=input$sep, 
+                    header = input$header, stringsAsFactors = input$stringAsFactors)
+    # create logical set for numeric columns
+    
+    temp2[,!sapply(temp2,is.numeric)]<-lapply(temp2[,!sapply(temp2,is.numeric)], function(x) replace(x, is.na(x), Mode(x[!is.na(x)])))
+    temp2
+  })    
+  
+  both_na<-reactive({
+    source("D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree_App/functions.R")
+    file1<-input$file
+    temp3<-read.csv(file=file1$datapath, sep=input$sep, 
+                    header = input$header, stringsAsFactors = input$stringAsFactors)
+    # create logical set for numeric columns
+    temp3[,sapply(temp3,is.numeric)]<-lapply(temp3[,sapply(temp3,is.numeric)], function(x) replace(x, is.na(x), mean(x[!is.na(x)])))
+    temp3[,!sapply(temp3,is.numeric)]<-lapply(temp3[,!sapply(temp3,is.numeric)], function(x) replace(x, is.na(x), Mode(x[!is.na(x)])))
+    temp3
+  })    
   
   event_impute<-eventReactive(input$Impute, {
     source("D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree_App/functions.R")
     runif(input$Impute == 1)
-    head(num_na())
+    if(input$Imputation == "Continous"){
+      head(num_na())
+      }
+    if(input$Imputation == "Categorical"){
+      head(categorical_na())
+      }
+    else
+      head(both_na())
      
   })
   
