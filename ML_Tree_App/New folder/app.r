@@ -68,7 +68,7 @@ ui<- shinyUI(fluidPage(
                              tags$hr(),
                              h5(helpText("Select the Appropriate scaling and centering (if required) criterion")),
                              radioButtons(inputId = 'Scaling', label = 'Scaling & Centering', 
-                                          choices = c(Normalization ="Normalization",Standardization = "Standardization"), 
+                                          choices = c("Normalization","Standardization"), 
                                           selected = "Standardization"),
                              br(),
                              actionButton(inputId = "scale", label="Scale/center"),
@@ -94,7 +94,9 @@ ui<- shinyUI(fluidPage(
                
                
                mainPanel(
-                 tableOutput("table_Imputation")
+                 tableOutput("table_Imputation"),
+                 br(),br(),
+                 tableOutput("std_table")
                  
                  
                  
@@ -229,8 +231,6 @@ server<- shinyServer(function(input,output){
   
   
   
-  
-  
   event<-eventReactive(input$plot, {
     col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
     library(corrplot)
@@ -301,10 +301,27 @@ server<- shinyServer(function(input,output){
      
   })
   
+  ## Scaling and Centering
+  
+  event_scale<-eventReactive(input$scale, {
+    library(clusterSim)
+    runif(input$scale == 1)
+    if(input$Scaling == "Normalization"){
+      data_norm<-data.Normalization(data_num(),type="n1",normalization="column")
+      head(data_norm)
+    }
+    else
+      data_std<-data.Normalization(data_num(),type="n0",normalization="column")
+      head(data_std)
+    
+  })
+  
+  
   output$table_Imputation<- renderTable({
    event_impute()
-  
   })
+  
+  output$std_table<-renderTable({event_scale()})  
   
 }
 )
