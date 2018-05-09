@@ -65,18 +65,11 @@ ui<- shinyUI(fluidPage(
                                           selected = "Both"),
                              br(),
                              actionButton(inputId = "Impute", label = "Impute"),
-                             tags$hr(),
-                             h5(helpText("Select the Appropriate scaling and centering (if required) criterion")),
-                             radioButtons(inputId = 'Scaling', label = 'Scaling & Centering', 
-                                          choices = c("Normalization","Standardization"), 
-                                          selected = "Standardization"),
-                             br(),
-                             actionButton(inputId = "scale", label="Scale/center"),
-                             tags$hr(),
                              h5(helpText("Split the Dataset")),
                              br(),br(),
                              sliderInput(inputId = "split_ratio", label="Split Ratio", min=0, max=1, value = 10),
-                             actionButton(inputId = "Split", label="Split"),
+                             actionButton(inputId = "Train", label="Train"),
+                             actionButton(inputId = "Test", label="Test"),
                              br(), br(),
                              tags$hr(),
                              h5(helpText("Select the Model")),
@@ -85,7 +78,13 @@ ui<- shinyUI(fluidPage(
                              br(),
                              sliderInput(inputId = "nTrees", label="nTrees", min=0, max=10000, value = 10000),
                              br(),
-                             selectInput(inputId = 'cv', label = 'Cross Validation', c(2,3,4,5,6,7,8,9,10))
+                             selectInput(inputId = 'cv', label = 'Cross Validation', c(2,3,4,5,6,7,8,9,10)),
+                             tags$hr(),
+                             h5(helpText("Specifiy the reponse variable in this format < response variable ~. >")),
+                             textInput(inputId = "formula", label = "formula",value=""),
+                             tags$hr(),
+                             h5(helpText("Fit the Model on training data")),
+                             actionButton(inputId = "Fit", label ="Fit")
                              
                ),
                
@@ -93,16 +92,26 @@ ui<- shinyUI(fluidPage(
                
                
                
-               mainPanel(
+               mainPanel(tabsetPanel(
+                 tabPanel("PreProcess_Tables", value ="PreProcess",style="color: #FF7D33",
                  tableOutput("table_Imputation"),
                  br(),br(),
-                 tableOutput("std_table")
+                 tableOutput("std_table"),
+                 br(),br(),
+                 textOutput("Text_train"),
+                 textOutput("obs_train"),
+                 textOutput("Text_test"),
+                 textOutput("obs_test")
                  
+                 ),
+                 tabPanel("Model_Summary", value = "Summary",
+                          textOutput("model")
+                          
+                 )
                  
-                 
-                 
-               )
+                )
                
+              )
              )
              
     ),
@@ -125,6 +134,7 @@ ui<- shinyUI(fluidPage(
                              h5(helpText("Select the Model for ROC plot")),
                              selectInput(inputId = "Model", label= "Model",c("DecisionTree","RandomForest",
                                                                              "GBM", "Bagging","AllTogether"), selected = "AllTogether")
+                             
                              
                ),
                
@@ -322,6 +332,58 @@ server<- shinyServer(function(input,output){
   })
   
   output$std_table<-renderTable({event_scale()})  
+  
+  ## Event_Split
+  
+  
+  event_Train<-eventReactive(input$Train, {
+    source("D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree_App/functions.R")
+    
+    runif(input$Train == 1)
+    train<-get_dataset(data_num(),split_ratio = input$split_ratio, set = "train")
+    train
+    
+  })
+  
+  event_Test<-eventReactive(input$Test, {
+    source("D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree_App/functions.R")
+    
+    runif(input$Test == 1)
+    test<-get_dataset(data_num(),split_ratio = input$split_ratio, set = "test")
+    test
+    
+  })
+  output$obs_train<-renderPrint({nrow(event_Train())})
+  output$obs_test<-renderPrint({nrow(event_Test())})
+  
+  output$Text_train<-renderText({"The number of observation in train and test set is,"})
+  output$Text_test<-renderText({"The number of observation in  test set is,"})
+  
+  
+  ## Fit the model
+  
+  f <- reactive({ as.formula(paste(input$formula, "~ .")) })
+  
+  event_fit<-eventReactive(input$Fit,{ 
+    
+    source("D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree_App/functions.R")
+    runif(input$Fit == 1)
+    if(input$Model == "Decision Tree"){
+      return (NULL)
+    }
+    if(input$Model == "GBM"){
+      GBM<-get_model(data=event_Train(),newdata=event_Test(),algo=gbm,formula=f(),type = "response", ntrees = input$nTrees,cv.fold=input$cv)
+      print(gbm)
+    }
+    else {
+      bagging<-get_model(data=event_Train(),newdata=event_Test(),algo=bagging,formula=input$formula,type = "response", ntrees = input$nTrees,cv.fold=input$cv)
+      print(bagging)
+    }
+    
+    })
+  
+  output$model<-renderPrint({event_fit})
+  
   
 }
 )

@@ -56,7 +56,7 @@ model = function(algo =gbm ,distribution = 'bernoulli',
     
     model<- algo(formula = default ~ ., 
                  distribution = distribution,
-                 data = train,
+                 data = data,
                  n.trees = n.trees,
                  cv.fold= 3)
     
