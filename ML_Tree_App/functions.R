@@ -29,7 +29,7 @@ Mode <- function(x) {
 
 
 ## split the dataset
-get_dataset<- function(x, split_ratio = 0.8, set = 'train'){
+get_dataset<- function(data_x, split_ratio = 0.8, set = 'train'){
   
   if (set == 'train'){
     n <- nrow(data_x)
@@ -55,50 +55,3 @@ get_dataset<- function(x, split_ratio = 0.8, set = 'train'){
   
 }
 
-## User defined funciton for MOdel (GBM and Bagging),
-
-
-model = function(data=data,algo = gbm ,formula = formula,distribution = 'bernoulli', 
-                 type = 'response', set='AUC',n.trees=10000, cv.fold=cv.fold, newdata=newdata){
-  ## Fit the model
-  
-  model<- algo(formula = formula, 
-               distribution = distribution,
-               data = data,
-               n.trees = n.trees,
-               cv.fold= cv.fold)
-  
-  ## Generate the prediction on the test set
-  
-  pred<- predict(object = model,
-                 newdata = newdata,
-                 n.trees = n.trees,
-                 type = type)
-  
-  ## Generate the test set AUCs using the pred
-  
-  AUC<- auc(actual = test$default, predicted = pred)
-  
-  
-  
-  if (set == 'AUC'){
-    return(AUC)
-  }
-  
-  if (set == 'predictions'){
-    return(pred)
-  }
-  if (set == 'model'){
-    return(model)
-    
-  }
-  else
-    return(NULL)
-  
-} 
-
-
-get_model<- function(data=data,newdata=newdata,algo,formula = formula, type = type, ntrees = 5000,cv.fold=cv.fold){
-  z= model(algo = algo, type= type, set = 'model',data=data,cv.fold=cv.fold, newdata = newdata, type = 'response')
-  
-}

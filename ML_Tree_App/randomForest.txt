@@ -1,0 +1,26 @@
+      GLM<-glm(formula = default ~ ., 
+                    family=binomial(link='logit'),
+                    data = train)
+                 
+
+RF<- randomForest(formula = default ~ ., 
+                    distribution = "bernoulli",
+                    data = train,
+                    n.trees = 1000,
+                    cv.fold= 2)
+
+## Random Forest Training Dataset
+
+  
+  RF_Train<-reactive({
+    source("D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree_App/functions.R")
+    file1<-input$file
+    temp3<-read.csv(file=file1$datapath, sep=input$sep, 
+                    header = input$header, stringsAsFactors = input$stringAsFactors)
+    # Replace the missing values by Mean(numeric) and Mode(UDF, for categorical)
+    temp3[,17]<-as.factor(temp3[,17])
+    temp3[,sapply(temp3,is.numeric)]<-lapply(temp3[,sapply(temp3,is.numeric)], function(x) replace(x, is.na(x), mean(x[!is.na(x)])))
+    temp3[,!sapply(temp3,is.numeric)]<-lapply(temp3[,!sapply(temp3,is.numeric)], function(x) replace(x, is.na(x), Mode(x[!is.na(x)])))
+    
+    temp3
+  })  

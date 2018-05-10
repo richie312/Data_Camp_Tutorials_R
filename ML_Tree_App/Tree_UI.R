@@ -56,7 +56,7 @@ model = function(algo =gbm ,distribution = 'bernoulli',
     
     model<- algo(formula = default ~ ., 
                  distribution = distribution,
-                 data = data,
+                 data = train,
                  n.trees = n.trees,
                  cv.fold= 3)
     
@@ -120,7 +120,7 @@ pred_list<-list(BAG_preds,RF_pred, GBM_pred)
 
 ## List of different models
 
-get_model<- function(algo,type = 'response', ntrees = 10000){
+get_model<- function(algo,type = 'response', ntrees = 500){
   z= model(algo = algo, type= type, set = 'model')
   
 }
