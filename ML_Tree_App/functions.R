@@ -55,3 +55,11 @@ get_dataset<- function(data_x, split_ratio = 0.8, set = 'train'){
   
 }
 
+get_ROC = function(pred_list, actual = test$default, legend){
+  pred<-prediction(pred_list, actual)
+  roc<-performance(pred,"tpr","fpr")
+  plot(roc, main = "Test Set ROC Curves")
+  legend(x = "bottomright", 
+         legend = legend)
+  
+}

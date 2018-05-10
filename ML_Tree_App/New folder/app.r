@@ -1,6 +1,7 @@
 ## Load the necessary packages
 
-pacman::p_load(shiny, shinythemes,gbm, randomForest,ggplot2,ipred,caret,ROCR,dplyr,ModelMetrics) 
+pacman::p_load(shiny, shinythemes,gbm, randomForest,ggplot2,ipred,caret,ROCR,dplyr,ModelMetrics,
+               rpart,rpart.plot,rattle) 
 
 PATH<-"D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree_App/New folder/www/mystyle.css"
 ui<- shinyUI(fluidPage(
@@ -65,6 +66,12 @@ ui<- shinyUI(fluidPage(
                                           selected = "Both"),
                              br(),
                              actionButton(inputId = "Impute", label = "Impute"),
+                             tags$hr(),
+                             h5(helpText("Select the column number in order to convert the Response 
+                                         variable into factor (Applied only for classification models), you
+                                         can get the column number just by not selecting the header on Data tab.")),
+                             selectInput(inputId = "col_num",label="col_num", choices=c(1:50)),
+                             
                              h5(helpText("Split the Dataset")),
                              br(),br(),
                              sliderInput(inputId = "split_ratio", label="Split Ratio", min=0, max=1, value = 10),
@@ -83,10 +90,6 @@ ui<- shinyUI(fluidPage(
                              h5(helpText("Specifiy the response variable column number")),
                              textInput(inputId = "Response", label = "response", value = "Enter the response var"),
                              tags$hr(),
-                             h5(helpText("Select the column number in order to convert the Response 
-                                         variable into factor (only for Random Forest)")),
-                             tags$hr(),
-                             selectInput(inputId = "col_num",label="col_num", choices=c(1:50)),
                              h5(helpText("Fit the Model on training data")),
                              actionButton(inputId = "Fit", label ="Fit")
                              
@@ -111,7 +114,12 @@ ui<- shinyUI(fluidPage(
                  tabPanel("Model_Summary", value = "Summary",
                           verbatimTextOutput("model")
                           
-                 )
+                 ),
+                 tabPanel("Plot", value="Model_Plot",
+                          
+                          plotOutput("Model_Plot")
+                          
+                          )
                  
                 )
                
@@ -127,59 +135,19 @@ ui<- shinyUI(fluidPage(
                
                sidebarPanel( titlePanel("Confusion Matrix"),
                              tags$hr(),
-                             h5(helpText("Select the Model for confusionMatrix Computation")),
-                              radioButtons(inputId = 'confusionMatrixc', label = 'confusionMatrix', 
-                                          choices = c("DecisionTree", "Logistic Regression","RandomForest","Bagging"), 
-                                          selected = "RandomForest"),
-                             tags$hr(),
-                             h5(helpText("Select the threshold")),
-                             sliderInput(inputId = "threshold", label="Threshold", min=0, max=1, value = 10),
-                             tags$hr(),
+                             h5(helpText("Generate the prediction list for each model")),
+                             actionButton(inputId = "Predict_List", label = "Predict_List"),
+                             br(), br(),
+                             actionButton(inputId = "AUC", label="AUC"),
+                           
                              h5(helpText("Select the Model for ROC plot")),
-                             selectInput(inputId = "Model", label= "Model",c("DecisionTree","RandomForest",
-                                                                             "Logistic Regression", "Bagging","AllTogether"), selected = "AllTogether")
-                             
-                             
-               ),
-               
-               
-               
-               
-               
-               mainPanel(
-                 
-                 
-                 
-                 
-               )
-               
-             )
-    ),
-    
-    tabPanel("Optimization and Tuning", value="Optimization", style="color: #FF7D33",
-             (titlePanel("Hyperparameter Tuning")),
-             
-             
-             sidebarLayout(
-               
-               sidebarPanel( titlePanel("Optimization"),
+                             selectInput(inputId = "Model_Plot_ROC", label= "Model",c("DecisionTree","RandomForest",
+                                                                             "Logistic Regression", "Bagging","AllTogether"), 
+                                         selected = "AllTogether"),
+                             br(),br(),
                              tags$hr(),
-                             h5(helpText("Select the Model for Optimization")),
-                             radioButtons(inputId = 'Optimization', label = 'Optimization', 
-                                          choices = c("DecisionTree", "GBM","RandomForest","Bagging"), 
-                                          selected = "RandomForest"),
-                             br(),
-                             actionButton(inputId ="get_opt", label = "Get Optmisation Value"),
-                             br(),br(),
-                             actionButton(inputId = "Predict", label= "Predict on test set"),
-                             br(),br(),
-                             actionButton(inputId = "Compare", label = "Plot and Compare"),
-                             br(), br(),
-                             fileInput(inputId = "test_file", label = "Unseen Test File"),
-                             br(), br(),
-                             actionButton(inputId = "Predict2", label= "Predict on unseen test set"),
-                             br(), br(),
-                             downloadButton(outputId = "submission", label="Download Submission File")
+                             h5(helpText("Click the get_plot button to get respective ROC plot")),
+                             actionButton(inputId = "get_plot", label = "get_plot")
                              
                              
                ),
@@ -189,13 +157,20 @@ ui<- shinyUI(fluidPage(
                
                
                mainPanel(
+                 textOutput("List"),
+                 br(), br(),
+                 h4(helpText("The AUC score for the selected model is,")),
+                 verbatimTextOutput("AUC"),
+                 br(),br(),
+                 h4(helpText("Below is the ROC plot for the selected model. Please be informed there is still chances 
+                         of improving the model based on hypertuning of the parameters,")),
                  
+                 plotOutput("get_plot")
                  
                  
                )
                
              )
-             
     ) 
   )
 )
@@ -292,10 +267,12 @@ server<- shinyServer(function(input,output){
   
   both_na<-reactive({
     source("D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree_App/functions.R")
+    
     file1<-input$file
     temp3<-read.csv(file=file1$datapath, sep=input$sep, 
                     header = input$header, stringsAsFactors = input$stringAsFactors)
     # create logical set for numeric columns
+    temp3[,as.numeric(paste(input$col_num))]<-as.factor(temp3[,as.numeric(paste(input$col_num))])
     temp3[,sapply(temp3,is.numeric)]<-lapply(temp3[,sapply(temp3,is.numeric)], function(x) replace(x, is.na(x), mean(x[!is.na(x)])))
     temp3[,!sapply(temp3,is.numeric)]<-lapply(temp3[,!sapply(temp3,is.numeric)], function(x) replace(x, is.na(x), Mode(x[!is.na(x)])))
     temp3
@@ -388,14 +365,134 @@ server<- shinyServer(function(input,output){
       
       
     }
+    if(input$Model == "Decision Tree"){
+      
+      Tree<-rpart(formula = f(),
+                  data = event_Train())
+      return(Tree)
+    }
     
     })
-  
+  ## Model Summary
   output$model<-renderPrint({summary(event_fit())})
   
+  ## Model Plot
   
+  output$Model_Plot<-renderPlot({
+    
+    if(input$Model == "Decision Tree"){
+      
+      fancyRpartPlot({event_fit()}, cex = 0.9)
+    }
+   
+    if(input$Model == "Random Forest"){
+      
+      varImpPlot({event_fit()})
+    }
+    if(input$Model == "Logistic Regression"){
+      
+      plot({event_fit()$residuals})
+    }
+    else{
+      return()
+    }
+    
+  }
+  )
+  ## ROC
+    
+    ## List of Predicted values for each Models
+ 
+    Pred<-eventReactive(input$Predict_List,{
+      runif(input$Predict_List == 1)
+      if(input$Model == "Bagging"){ 
+        predict<-predict(object=event_fit(),
+                newdata = event_Test(),
+                       type='prob')
+        return(predict)
+      }
+      if(input$Model == "Random Forest"){ 
+        predict<-predict(object=event_fit(),
+                         newdata = event_Test(),
+                         type='response')
+        return(predict)
+      }
+      if(input$Model == "Logistic Regression"){ 
+        predict<-predict(object=event_fit(),
+                         newdata = event_Test(),
+                         type='response')
+        return(predict)
+      }
+      if(input$Model == "Decision Tree"){ 
+        predict<-predict(object=event_fit(),
+                         newdata = event_Test(),
+                         type='prob')
+        return(predict)
+      }
+      
+      else{return(NULL)}
+    })
+    
+    ## Output for Prediction
+    
+    output$List<-renderPrint({length(Pred())})
+    
+    ## AUC
+    AUC<-eventReactive(input$AUC,{
+      runif(input$AUC == 1)
+        if(input$Model == "Bagging"){
+        score<-auc(actual = event_Test()[,as.numeric(paste(input$col_num))], predicted = Pred())
+        return(score)  
+        }
+      if(input$Model == "Logistic Regression"){
+        score<-auc(actual = event_Test()[,as.numeric(paste(input$col_num))], predicted = Pred())
+        return(score)  
+      }
+      if(input$Model == "Random Forest"){
+        score<-auc(actual = event_Test()[,as.numeric(paste(input$col_num))], predicted = Pred())
+        return(score)  
+      }
+      if(input$Model == "Decision Tree"){
+        score<-auc(actual = event_Test()[,as.numeric(paste(input$col_num))], predicted = Pred())
+        return(score)  
+      }
+      else{return(NULL)}
+      
+      })
+      
+     ## Output for AUC Score
+    
+    output$AUC<-renderPrint({AUC()})
+    
+    
+    ## ROC plots
+    
+    get_plot=eventReactive(input$get_plot,{
+      runif(get_plot == 1)
+      if (input$Model == "Decision Tree"){
+      get_ROC(pred_list = Pred(),actual=event_Test()[,as.numeric(paste(input$col_num))], legend=input$Model_Plot_ROC)
+        }
+      if (input$Model == "Logistic Regression"){
+        get_ROC(pred_list = Pred(),actual=event_Test()[,as.numeric(paste(input$col_num))], legend=input$Model_Plot_ROC)
+      }
+      if (input$Model == "Bagging"){
+        get_ROC(pred_list = Pred(),actual=event_Test()[,as.numeric(paste(input$col_num))], legend=input$Model_Plot_ROC)
+      }
+      if (input$Model == "Random Forest"){
+        get_ROC(pred_list = Pred(),actual=event_Test()[,as.numeric(paste(input$col_num))], legend=input$Model_Plot_ROC)
+      }
+    else {return(NULL)}
+    }
+    )
+    
+    
+    output$get_plot<-renderPlot({get_plot()})
 }
+
 )
+
+    
+
 
 # Run the application 
 shinyApp(ui = ui, server = server)
