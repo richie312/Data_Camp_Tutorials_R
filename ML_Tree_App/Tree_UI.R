@@ -5,12 +5,9 @@ set.seed(123)
 ## load the dataset
 data_x = read.csv("credit.csv")
 
-## Preprocessing the dataset
-
-data_x$default <- ifelse(data_x$default == "yes", 1, 0)
 
 ## split the dataset
-get_dataset<- function(x, split_ratio = 0.8, set = 'train'){
+get_dataset<- function(data_x, split_ratio = 0.8, set = 'train'){
   
   if (set == 'train'){
     n <- nrow(data_x)
@@ -50,7 +47,7 @@ pacman::p_load(shiny,shinydashboard,gbm, randomForest,ggplot2,ipred,caret,ROCR,d
 ## User Defined Function for loading data, splitting and fitting the model
 
 
-model = function(algo =gbm ,distribution = 'bernoulli', 
+model = function(algo = algo ,distribution = 'bernoulli', 
                  type = 'response', set='AUC',n.trees=10000){
   ## Fit the model
     
@@ -93,13 +90,13 @@ model = function(algo =gbm ,distribution = 'bernoulli',
 
 ## get the AUC for different algo
 
- get_auc= function(algo, type,n.trees){
+ get_auc= function(algo = algo, type,n.trees){
     z = model(algo = algo,type = type, set = 'AUC')
 }
 
  
 GBM_auc = get_auc(algo = gbm, type='response')
-RF_auc =  get_auc(algo = randomForest, type ='response')
+RF_auc =  get_auc(algo = randomForest, type ='prob')
 BAG_auc = get_auc(algo = bagging, type ='class')
 
 ## Make a list of predictions
@@ -111,7 +108,7 @@ get_pred<- function(algo, type, n.trees =10000){
 }
 
 BAG_preds<- get_pred(algo = bagging, type= 'class')
-RF_pred<- get_pred(algo = randomForest, type ='response')
+RF_pred<- get_pred(algo = randomForest, type ='prob')
 GBM_pred<- get_pred(algo = gbm, type = 'response')
 
 
@@ -155,8 +152,8 @@ get_ROC = function(pred_list, actual = test$default, legend){
   
 }
 
-get_ROC(pred_list = GBM_pred,legend = "Random Forest")
-
+get_ROC(pred_list = RF_pred,actual  = test$default,legend = "Random Forest")
+plot(z)
 
 ## Tuning based on OOB (out of bag)
 

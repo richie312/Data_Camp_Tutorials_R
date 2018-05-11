@@ -1,26 +1,33 @@
       GLM<-glm(formula = default ~ ., 
                     family=binomial(link='logit'),
                     data = train)
-                 
+                 DT<- rpart(default ~ ., test)
 
 RF<- randomForest(formula = default ~ ., 
-                    distribution = "bernoulli",
                     data = train,
                     n.trees = 1000,
                     cv.fold= 2)
 
-## Random Forest Training Dataset
+predict_DT<-predict(object=DT,
+                         newdata = test,
+                         type='prob')
 
-  
-  RF_Train<-reactive({
-    source("D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree_App/functions.R")
-    file1<-input$file
-    temp3<-read.csv(file=file1$datapath, sep=input$sep, 
-                    header = input$header, stringsAsFactors = input$stringAsFactors)
-    # Replace the missing values by Mean(numeric) and Mode(UDF, for categorical)
-    temp3[,17]<-as.factor(temp3[,17])
-    temp3[,sapply(temp3,is.numeric)]<-lapply(temp3[,sapply(temp3,is.numeric)], function(x) replace(x, is.na(x), mean(x[!is.na(x)])))
-    temp3[,!sapply(temp3,is.numeric)]<-lapply(temp3[,!sapply(temp3,is.numeric)], function(x) replace(x, is.na(x), Mode(x[!is.na(x)])))
-    
-    temp3
-  })  
+auc(actual=ifelse(test$default == "yes", 1,0),predicted=predict[,"yes"])
+
+actual=list(ifelse(test$default == "yes", 1,0))
+predicted=list(predict[,"yes"])
+  pred<-prediction(predicted, actual)
+        roc<-performance(pred,"tpr","fpr")
+        
+
+pred<-prediction(predictions=predict[,"yes"],labels=ifelse(test$default == "yes", 1,0))
+roc<-performance(pred,"tpr","fpr")
+
+
+z<-predict[,"yes]
+
+d<-c()
+for (i in 1:length(z)){
+d[i]<-z[[i]]
+}
+plot(roc)
