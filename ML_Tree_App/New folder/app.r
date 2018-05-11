@@ -140,7 +140,7 @@ ui<- shinyUI(fluidPage(
                              br(),br(),
                              sliderInput("threshold", label = "threshold",min=0,max=1, value=10),
                              br(),br(),
-                             actionButton(inputId = "ConfustionMatrix", label="confusionMatrix")
+                             actionButton(inputId = "ConfusionMatrix", label="confusionMatrix")
                            
                              
                              
@@ -150,25 +150,41 @@ ui<- shinyUI(fluidPage(
                
                
                
-               mainPanel(
+               mainPanel(tabsetPanel(
+                 tabPanel("ROC & AUC", value ="ROC",style="color: #FF7D33",
+                   
                  textOutput("List"),
                  br(), br(),
                  h5(helpText("The AUC score for the selected model is,",style="color: #FF7D33")),
                  textOutput("AUC"),
-                 br(),
-                 
-                 textOutput("Matrix_Table"),
                  br(),br(),
+                 
                  h5(helpText("Below is the ROC plot for the selected model. Please be informed there is still chances 
                          of improving the model based on hypertuning of the parameters,",style="color: #FF7D33")),
                  br(),br(),
                  plotOutput("ROC_Plot")
                  
+                
+               ),
+               tabPanel("ConfusionMatrix", value = "Matrix",style="color: #FF7D33",
+                        
+                        tableOutput("Matrix_table"),
+                        
+                        br(),br(),
+                        tableOutput("Class"),
+                        br(),br(),
+                        tableOutput("overall")
+                        
+                        
                  
                )
                
              )
-    ) 
+             
+               )
+             )    
+             ) 
+    
   )
 )
 )
@@ -502,33 +518,27 @@ server<- shinyServer(function(input,output){
     
     ## Confusion Matrix
     
-    event_Matrix<-eventReactive(input$confusionMatrix,{
+    event_Matrix<-eventReactive(input$ConfusionMatrix,{
       
-      h5(helpText("Confusion Matrix",style="color: #FF7D33"))
+     
       
-      runif(event_Matrix == 1)
-      if(input$Model == "Decision Tree"){
-        cm = confusionMatrix(actual = ifelse(event_Test()[,as.numeric(paste(input$col_num))] == "yes", 1, 0),
-                             predicted = Pred()[,"yes"], cuttoff = input$threshold)
-      }
-      if(input$Model == "Bagging"){
-        cm = confusionMatrix(actual = ifelse(event_Test()[,as.numeric(paste(input$col_num))] == "yes", 1, 0),
-                             predicted = Pred()[,"yes"], cuttoff = input$threshold)
-      }
-      if(input$Model == "Logistic Regression"){
-        cm = confusionMatrix(actual = ifelse(event_Test()[,as.numeric(paste(input$col_num))] == "yes", 1, 0),
-                             predicted = Pred(), cuttoff = input$threshold)
-      }
-      if(input$Model == "Random Forest"){
-        cm = confusionMatrix(actual = ifelse(event_Test()[,as.numeric(paste(input$col_num))] == "yes", 1, 0),
-                             predicted = Pred()[,"yes"], cuttoff = input$threshold)
-      }
+      pred<-reactive({pred<-factor(ifelse(Pred()[,"yes"]>input$threshold,"yes","no"))
+                      pred<-relevel(pred,"yes")
+                      })
       
+      
+      runif(input$ConfusionMatrix == 1)
+      
+        cm = confusionMatrix(reference = event_Test()[,as.numeric(paste(input$col_num))] ,
+                             data = pred())
+       return(cm)
+     
       
     })
     
-    output$Matrix_Table<-renderPrint({event_Matrix()})
-    
+    output$Matrix_Table<-renderTable(as.table({event_Matrix()$table}))
+    output$Class<-renderTable(as.table({event_Matrix()$byClass}))
+    output$overall<-renderTable(as.table({event_Matrix()$overall}))
     
     
 }

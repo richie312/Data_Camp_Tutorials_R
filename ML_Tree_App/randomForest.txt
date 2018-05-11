@@ -8,11 +8,15 @@ RF<- randomForest(formula = default ~ .,
                     n.trees = 1000,
                     cv.fold= 2)
 
+DT<-rpart(default~., train)
+
 predict_DT<-predict(object=DT,
                          newdata = test,
                          type='prob')
 
-auc(actual=ifelse(test$default == "yes", 1,0),predicted=predict[,"yes"])
+auc(actual=ifelse(test$default == "yes", 1,0),predicted=predict_DT[,"yes"])
+
+confusionMatrix(actual=ifelse(test$default == "yes", 1,0),predicted=predict_DT[,"yes"])
 
 actual=list(ifelse(test$default == "yes", 1,0))
 predicted=list(predict[,"yes"])
@@ -31,3 +35,28 @@ for (i in 1:length(z)){
 d[i]<-z[[i]]
 }
 plot(roc)
+
+
+pred<-factor(ifelse(predict_DT[, "yes"] > 0.6, "yes", "no"))
+pred<-relevel(pred,"yes")
+
+cm<-confusionMatrix(data = pred, reference = test$default)
+
+
+
+ 
+      if(input$Model == "Bagging"){
+        cm = confusionMatrix(reference =  ifelse(event_Test()[,as.numeric(paste(input$col_num))] == "yes", 1, 0),
+                             data = pred())
+      }
+      if(input$Model == "Logistic Regression"){
+        cm = confusionMatrix(reference = ifelse(event_Test()[,as.numeric(paste(input$col_num))] == "yes", 1, 0),
+                             data = Pred())
+      }
+      if(input$Model == "Random Forest"){
+        cm = confusionMatrix(reference =  ifelse(event_Test()[,as.numeric(paste(input$col_num))] == "yes", 1, 0),
+                             data = pred())
+      }
+      else{return(print("Please select the right model"))}
+
+
