@@ -1,7 +1,7 @@
 ## Load the necessary packages
 
-pacman::p_load(shiny, shinythemes,gbm, randomForest,ggplot2,ipred,ROCR,dplyr,ModelMetrics,
-               rpart,rpart.plot,rattle) 
+pacman::p_load(shiny, shinythemes,gbm, randomForest,ggplot2,caret,ipred,ROCR,dplyr,ModelMetrics,
+               rpart,rpart.plot,rattle,ggthemes,gridExtra) 
 
 PATH<-"D:/Documents/R_Projects/Data_Camp_Tutorials/ML_Tree_App/New folder/www/mystyle.css"
 ui<- shinyUI(fluidPage(
@@ -69,10 +69,10 @@ ui<- shinyUI(fluidPage(
                              tags$hr(),
                              h5(helpText("Select the column number for the response variable, you
                                          can get the column number just by not selecting the header on Data tab.")),
-                             selectInput(inputId = "col_num",label="col_num", choices=c(1:50)),
+                             selectInput(inputId = "col_num",label="col_num", choices=c(1:50),selected = 17),
                              h5(helpText("Split the Dataset")),
                              br(),br(),
-                             sliderInput(inputId = "split_ratio", label="Split Ratio", min=0, max=1, value = 10),
+                             sliderInput(inputId = "split_ratio", label="Split Ratio", min=0, max=1, value = 0.7),
                              actionButton(inputId = "Train", label="Train"),
                              actionButton(inputId = "Test", label="Test"),
                              br(), br(),
@@ -81,12 +81,12 @@ ui<- shinyUI(fluidPage(
                              selectInput(inputId = "Model", label= "Model",c("Decision Tree","Random Forest",
                                                                              "Logistic Regression", "Bagging")),
                              br(),
-                             sliderInput(inputId = "nTrees", label="nTrees", min=0, max=10000, value = 10000),
+                             sliderInput(inputId = "nTrees", label="nTrees", min=0, max=10000, value = 950),
                              br(),
                              selectInput(inputId = 'cv', label = 'Cross Validation', c(0:10)),
                              tags$hr(),
                              h5(helpText("Specifiy the response variable")),
-                             textInput(inputId = "Response", label = "response", value = "Enter the response var"),
+                             textInput(inputId = "Response", label = "Response Variable", value = "Enter the response var"),
                              tags$hr(),
                              h5(helpText("Fit the Model on training data")),
                              actionButton(inputId = "Fit", label ="Fit")
@@ -115,7 +115,11 @@ ui<- shinyUI(fluidPage(
                  ),
                  tabPanel("Plot", value="Model_Plot",
                           
-                          plotOutput("Model_Plot")
+                          plotOutput("Model_Plot"),
+                          br(),br(),
+                          plotOutput("plot_cptable")
+                          
+                          
                           
                           )
                  
@@ -138,7 +142,7 @@ ui<- shinyUI(fluidPage(
                              br(), br(),
                              actionButton(inputId = "AUC", label="AUC"),
                              br(),br(),
-                             sliderInput("threshold", label = "threshold",min=0,max=1, value=10),
+                             sliderInput("threshold", label = "threshold",min=0,max=1, value=0.6),
                              br(),br(),
                              actionButton(inputId = "ConfusionMatrix", label="confusionMatrix")
                            
@@ -152,15 +156,11 @@ ui<- shinyUI(fluidPage(
                
                mainPanel(tabsetPanel(
                  tabPanel("ROC & AUC", value ="ROC",style="color: #FF7D33",
-                   
-                 textOutput("List"),
+                 textOutput("text_predict"),
+                 tableOutput("List"),
                  br(), br(),
-                 h5(helpText("The AUC score for the selected model is,",style="color: #FF7D33")),
+                 textOutput("text_auc"),
                  textOutput("AUC"),
-                 br(),br(),
-                 
-                 h5(helpText("Below is the ROC plot for the selected model. Please be informed there is still chances 
-                         of improving the model based on hypertuning of the parameters,",style="color: #FF7D33")),
                  br(),br(),
                  plotOutput("ROC_Plot")
                  
@@ -168,32 +168,33 @@ ui<- shinyUI(fluidPage(
                ),
                tabPanel("ConfusionMatrix", value = "Matrix",style="color: #FF7D33",
                         
-                        tableOutput("Matrix_table"),
-                        
+                        plotOutput("Matrix_table"),
                         br(),br(),
-                        tableOutput("Class"),
-                        br(),br(),
-                        tableOutput("overall")
+                        plotOutput("Result")
                         
                         
                  
-               )
+                      )
                
-             )
+                    )
              
-               )
-             )    
+                  )
+                )    
              ) 
     
-  )
-)
-)
+        )
+      )
+   )
 
 
 
 
 
 server<- shinyServer(function(input,output){
+  
+  ## Set the seed
+  
+  set.seed(123)
   
   # This reactive function will take the inputs from UI.R and use them for read.table() to read the data from the file. It returns the dataset in the form of a dataframe.
   # file$datapath -> gives the path of the file
@@ -386,24 +387,63 @@ server<- shinyServer(function(input,output){
   ## Model Summary
   output$model<-renderPrint({summary(event_fit())})
   
+  ## Model Plots(Insight)
+  cp_table<-reactive({as.data.frame(event_fit()$cptable)})
+  
+ plot_cptable_xerror<-reactive({
+    
+    ggplot(data=cp_table(),aes(x=CP, y=xerror))+
+      geom_smooth(method='loess')+
+      theme_economist()+
+     ggtitle("cp parameter vs xerror")+
+      theme(panel.border = element_blank(), 
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            plot.title = element_text(hjust = 0.5,size=18,colour="indianred4"),
+            axis.line = element_line(colour = "black"))+
+      theme(legend.position="none")
+  })
+  
+ plot_cptable_nsplit<-reactive({
+    ggplot(data=cp_table(),aes(x=nsplit, y=xerror))+
+      geom_smooth(method='loess')+
+      theme_economist()+
+     ggtitle("nsplit vs xerror")+
+      theme(panel.border = element_blank(), 
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            plot.title = element_text(hjust = 0.5,size=18,colour="indianred4"),
+            axis.line = element_line(colour = "black"))+
+      theme(legend.position="none")
+  })
+  output$plot_cptable<-renderPlot({
+    if (input$Model == "Decision Tree"){
+    grid.arrange(plot_cptable_xerror(),plot_cptable_nsplit(),ncol=2,nrow=1)
+    }
+    else{return()}
+    
+  })
+  
   ## Model Plot
   
   output$Model_Plot<-renderPlot({
     
     if(input$Model == "Decision Tree"){
-      
+      par(bg="#E8F6F3")
       fancyRpartPlot({event_fit()}, cex = 0.9)
     }
    
     if(input$Model == "Random Forest"){
-      
-      varImpPlot({
-        par(bg = "#D1F2EB")
-        event_fit()})
+      par(mfrow=c(1,2),bg = "#EAF2F8")
+      varImpPlot({event_fit()}, main="Variable Importance")
+      plot(event_fit())
+      legend(x = "right", 
+             legend = colnames(event_fit()$err.rate),
+             fill = 1:ncol(event_fit()$err.rate))
     }
     if(input$Model == "Logistic Regression"){
-      
-      plot({event_fit()$residuals})
+      par(bg="#F4ECF7")
+      plot({event_fit()$residuals}, main= "Residual plot")
     }
     else{
       return()
@@ -446,8 +486,13 @@ server<- shinyServer(function(input,output){
     })
     
     ## Output for Prediction
+    output$text_predict<-renderText({
+      if(input$Predict_List == 1){
+        paste("The first five predicted values of the selected model,")
+      }
+    })
     
-    output$List<-renderPrint({length(Pred())})
+    output$List<-renderTable({head(Pred())})
     
     ## AUC
     AUC<-eventReactive(input$AUC,{
@@ -475,7 +520,13 @@ server<- shinyServer(function(input,output){
       
      ## Output for AUC Score
     
-    output$AUC<-renderPrint({AUC()})
+    output$text_auc<-renderText({
+      if(input$AUC == 1){
+        paste("The AUC of the selected model is,")
+      }
+    })
+    
+    output$AUC<-renderPrint({as.numeric(round(AUC(),3))})
     
     
     ## ROC plots
@@ -511,8 +562,7 @@ server<- shinyServer(function(input,output){
         legend("bottomright", legend = input$Model)
       }
       
-        else{return(print("Hey bro you got to take the dimension of predicted values seriously"))
-      }
+        else{return()}
       
   })
     
@@ -525,20 +575,58 @@ server<- shinyServer(function(input,output){
       pred<-reactive({pred<-factor(ifelse(Pred()[,"yes"]>input$threshold,"yes","no"))
                       pred<-relevel(pred,"yes")
                       })
-      
+      ## For Logisitic Regression
+      pred1<-reactive({pred1<-factor(ifelse(Pred()>input$threshold,"yes","no"))
+      pred1<-relevel(pred1,"yes")
+      })
       
       runif(input$ConfusionMatrix == 1)
-      
-        cm = confusionMatrix(reference = event_Test()[,as.numeric(paste(input$col_num))] ,
+      if(input$Model == "Logistic Regression"){
+        cm = caret::confusionMatrix(reference = event_Test()[,as.numeric(paste(input$col_num))] ,
+                                    data = pred1())
+        return(cm)
+        
+      }
+      else{
+        cm = caret::confusionMatrix(reference = event_Test()[,as.numeric(paste(input$col_num))] ,
                              data = pred())
        return(cm)
      
-      
+      }
     })
     
-    output$Matrix_Table<-renderTable(as.table({event_Matrix()$table}))
-    output$Class<-renderTable(as.table({event_Matrix()$byClass}))
-    output$overall<-renderTable(as.table({event_Matrix()$overall}))
+    output$Matrix_table<-renderPlot({
+      par(bg="#E9F7EF")
+      
+      fourfold_table<-as.table(as.matrix(event_Matrix()$table))
+      fourfoldplot(fourfold_table, color = c("#CC6666", "#99CC99"),
+                   conf.level = 0, margin = 1, main = "Confusion Matrix")
+      
+      })
+    
+    output$Result<-renderPlot({
+      ##ADD in the byClass result
+      par(bg="#EAFAF1")
+      plot(c(100,0),c(100,0), type = "n", xlab="",ylab="", main ="Details",xaxt='n',yaxt='n')
+      text(10, 85, names(event_Matrix()$byClass[1]), cex=1.2, font=2)
+      text(10, 70, round(as.numeric(event_Matrix()$byClass[1]), 3), cex=1.2)
+      text(30, 85, names(event_Matrix()$byClass[2]), cex=1.2, font=2)
+      text(30, 70, round(as.numeric(event_Matrix()$byClass[2]), 3), cex=1.2)
+      text(50, 85, names(event_Matrix()$byClass[5]), cex=1.2, font=2)
+      text(50, 70, round(as.numeric(event_Matrix()$byClass[5]), 3), cex=1.2)
+      text(70, 85, names(event_Matrix()$byClass[6]), cex=1.2, font=2)
+      text(70, 70, round(as.numeric(event_Matrix()$byClass[6]), 3), cex=1.2)
+      text(90, 85, names(event_Matrix()$byClass[7]), cex=1.2, font=2)
+      text(90, 70, round(as.numeric(event_Matrix()$byClass[7]), 3), cex=1.2)
+      
+      ## Add in the overall result
+      
+      text(30, 35, names(event_Matrix()$overall[1]), cex=1.5, font=2)
+      text(30, 20, round(as.numeric(event_Matrix()$overall[1]), 3), cex=1.4)
+      text(70, 35, names(event_Matrix()$overall[2]), cex=1.5, font=2)
+      text(70, 20, round(as.numeric(event_Matrix()$overall[2]), 3), cex=1.4)  
+      
+      })
     
     
 }
