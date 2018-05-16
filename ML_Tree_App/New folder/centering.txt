@@ -1,9 +1,0 @@
-  if(input$Scaling == "Normalization"){
-      data_norm<-preProcess(both_na(), method=c("range"))
-      head(data_norm)
-    }
-    if(input$Imputation == "Standardization"){
-      data_std<-preProcess(both_na(), method=c("center", "scale"))
-      head(data_std)
-    }
-    else{return()}

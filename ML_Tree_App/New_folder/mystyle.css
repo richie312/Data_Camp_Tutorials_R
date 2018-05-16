@@ -1,0 +1,12 @@
+@import url("https://fonts.googleapis.com/css?family=Lobster|Cabin:400,700");
+
+h1 {
+  font-family: 'sans-serif', normal;
+  font-weight: 500;
+  line-height: 1.1;
+  color: #FF7D33;
+}
+
+body {
+  background-color: #F8FCB3;
+}

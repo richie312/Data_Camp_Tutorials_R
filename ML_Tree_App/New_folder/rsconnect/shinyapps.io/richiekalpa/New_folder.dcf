@@ -1,0 +1,12 @@
+name: New_folder
+title: New_folder
+username:
+account: richiekalpa
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 343266
+bundleId: 1375043
+url: https://richiekalpa.shinyapps.io/New_folder/
+when: 1526396779.83119
+asMultiple: FALSE
+asStatic: FALSE
