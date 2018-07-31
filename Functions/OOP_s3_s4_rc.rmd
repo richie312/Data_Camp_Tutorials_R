@@ -1,0 +1,114 @@
+---
+title: "Object Oriented Programming;S3,S4 & RC"
+author: "Coursera"
+date: "31 July 2018"
+output: html_document
+---
+
+## Object Oriented Programming, S3, S4 and RC
+
+Object oriented programming is one of the most successful and widespread philosophies of programming and is a cornerstone of many programming languages including Java, Ruby, Python, and C++. R has three object oriented systems because the roots of R date back to 1976, when the idea of object oriented programming was barely four years old. New object oriented paradigms were added to R as they were invented, so some of the ideas in R about object oriented programming have gone stale in the years since. It’s still important to understand these older systems since a huge amount of R code is written with them, and they’re still useful and interesting! Long time object oriented programmers reading this book may find these old ideas refreshing.
+
+The two older object oriented systems in R are called S3 and S4, and the modern system is called RC which stands for “reference classes.” Programmers who are already familiar with object oriented programming will feel at home using RC.
+
+In S3 OOP system, the object can be assigned to certain class by either using `structure()` or by `class` function. 
+
+```{r,eval=FALSE}
+special_num_1 <- structure(1, class = "special_number")
+class(special_num_1)
+
+# or by class function
+special_num_2<-2
+class(special_num_2)<-"special_number"
+class(special_num_2)
+
+```
+
+### Constructor of S3 class; `shape_S3()`
+
+```{r, eval= FALSE}
+
+shape_s3 <- function(side_lengths){
+  structure(list(side_lengths = side_lengths), class = "shape_S3")
+}
+
+square_4 <- shape_s3(c(4, 4, 4, 4))
+class(square_4)
+
+```
+
+### UseMethod
+
+Lets make method name `is_square`. Below code is used for making a method,
+
+```{r,eval=FALSE}
+
+## ['method']<-function(x)UseMethod('method')
+
+is_square<-function(x) UseMethod("is_square")
+```
+
+Now we can add the actual function definition for detecting whether or not a shape is a square by specifying is_square.shape_S3. By putting a dot (.) and then the name of the class after is_squre, we can create a method that associates is_square with the shape_S3class:
+
+```{r, eval= FALSE}
+
+is_sqaure.shape_S3<-function(x){
+  
+  length(x$side_legnths) == 4 &&
+    x$side_lengths[1] == x$side_lengths[2] &&
+    x$side_legnths[2] == x$side_lengths[3] &&
+    x$side_lengths[3] == x$side_lengths[4]
+
+}
+
+# Now check which of the obect is of class "square_4"
+
+is_square(square_4)
+
+
+```
+#### Check with another method, for example "default"
+
+```{r,eval=FALSE}
+
+is_square.default<-function(x){
+  NA
+}
+
+is_square(square_4)
+
+```
+
+### Add Print method to shape_S3 Class
+
+```{r,eval= FALSE}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
