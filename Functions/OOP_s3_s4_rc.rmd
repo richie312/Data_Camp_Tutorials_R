@@ -83,6 +83,30 @@ is_square(square_4)
 
 ```{r,eval= FALSE}
 
+print.shape_S3<-function(x){
+  if(length(x$side_lengths) == 3){
+    paste("A triangle with side,", x$side_lengths[1],x$side_lengths[2],"and",x_side_lengths[3])
+  }
+  else if(length(x$side_lengths) == 4){
+    
+    if(is_square(x)){
+      paste("A square with sides", x$side_lengths[1])
+    }
+    else{paste("A quadrilateral with sides,", x$side_lengths[1],
+                                                            x$side_lengths[2],x$side_lengths[3],x$side_lengths[4])}
+    
+  }
+   else {
+    paste("A shape with", length(x$side_lengths), "sides.")
+  }
+  
+}
+## Check whether print method is working or not?
+
+print(square_4)
+
+
+```
 
 
 
