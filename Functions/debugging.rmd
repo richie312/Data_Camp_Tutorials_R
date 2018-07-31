@@ -1,0 +1,88 @@
+## Debugging in R
+
+
+This section describes the tools for debugging your software in R. R comes with a set of built-in tools for interactive debugging that can be useful for tracking down the source of problems. These functions are
+
+* browser(): an interactive debugging environment that allows you to step through code one expression at a time
+* debug() / debugonce(): a function that initiates the browser within a function
+* trace(): this function allows you to temporarily insert pieces of code into other functions to modify their behavior
+* recover(): a function for navigating the function call stack after a function has thrown an error
+*traceback(): prints out the function call stack after an error occurs; does nothing if there’s no error
+
+### Use of `stop()` function for the error and `traceback()` method to find the exact location of the error.
+
+```{r, eval= FALSE}
+
+check_n_value <- function(n) {
+        if(n > 0) {
+                stop("n should be <= 0")
+        }
+}
+error_if_n_is_greater_than_zero <- function(n){
+        check_n_value(n)
+        n
+}
+error_if_n_is_greater_than_zero(5)
+```
+
+### Running the traceback() function immediately after getting this error would give us
+
+```{r, eval= FALSE}
+
+traceback()
+3: stop("n should be <= 0") at #2
+2: check_n_value(n) at #2
+1: error_if_n_is_greater_than_zero(5)
+
+```
+
+## Browser() function technique to find the error cause. 
+#### In this methodology, user who is creating the function can place the browser() inside the function in the following manner,
+
+
+
+```{r, eval = FALSE}
+
+check_n_value <- function(n) {
+        if(n > 0) {
+                browser()  ## Error occurs around here
+                stop("n should be <= 0")
+        }
+}
+
+```
+
+## Trace() function
+
+
+##### When the user do not have the easy access to the source code or in otehr words, when the function is in the cran package or in github package, then `trace()` function can be used to locate the error.
+
+The simplest use of `trace()` is to just call `trace()` on a function without any other arguments.
+`trace(check_n_value(4))`
+We can obtain the expression numbers of each part of a function by calling `as.list()` on the `body()`of a function.
+
+```{r, eval = FALSE}
+
+as.list(body(check_n_value))
+
+```
+
+Here, the if statement is the second expression in the function (the first “expression” being the very beginning of the function). We can further break down the second expression as follows.
+
+```{r, eval = FALSE}
+
+as.list(body(check_n_value)[[2]])
+```
+
+Now we can see the call to stop() is the third sub-expression within the second expression of the overall function. We can specify this to trace() by passing an integer vector wrapped in a list to the at argument.
+
+```{r,eval = FALSE}
+
+trace("check_n_value", browser, at = list(c(2, 3)))
+```
+
+
+
+
+
+
