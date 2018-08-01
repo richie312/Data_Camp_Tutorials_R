@@ -1,0 +1,244 @@
+---
+title: "SQL"
+author: "DataCamp"
+date: "31 July 2018"
+output: html_document
+---
+
+## SQL for Data Science
+
+`SELECT DISTINCT`
+Often your results will include many duplicate values. If you want to select all the unique values from a column, you can use the DISTINCT keyword.
+
+This might be useful if, for example, you're interested in knowing which languages are represented in the films table:
+
+```{sql,eval=FALSE}
+SELECT DISTINCT language FROM films;
+SELECT DISTINCT country FROM films;
+
+```
+Remember, you can check out the data in the tables by clicking on the tabs to the right under the editor!
+
+`COUNT`
+
+```{sql,eval = FALSE}
+
+SELECT COUNT(*) FROM reviews;
+SELECT COUNT(birthdate) FROM people;
+SELECT COUNT(DISTINCT birthdate) FROM people;
+
+```
+
+
+`FILTERING` using `where` clause;
+
+```{sql, eval = FALSE}
+
+SELECT title FROM films WHERE title = 'Metropolis';
+select * from films where language = 'French';
+select count(*) from films where language = 'Hindi';
+```
+
+
+`Filtering` using `WHERE AND` clause;
+
+
+```{sql, eval= FALSE}
+
+select title, release_year from films where language = 'Spanish' AND release_year < 2000
+
+select * from films where language = 'Spanish' and release_year > 2000;
+
+select * from films where language = 'Spanish' and release_year > 2000 and release_year <  2010;
+
+```
+
+`Filtering` using `WHERE AND OR` clause;
+
+```{sql, eval = FALSE}
+select title, release_year from films where (release_year >=1990 AND release_year <2000);
+
+select title, release_year from films where (release_year >=1990 AND release_year <2000) AND (language = 'French' OR language = 'Spanish');
+
+select title, release_year from films where (release_year >=1990 AND release_year <2000) AND (language = 'French' OR language = 'Spanish') AND (gross > 2000000);
+```
+
+
+`BETWEEN`
+
+```{sql, eval = FALSE}
+
+SELECT title, release_year FROM films WHERE release_year BETWEEN 1990 AND 2000;
+SELECT title, release_year FROM films WHERE release_year BETWEEN 1990 AND 2000 AND budget > 100000000;
+SELECT title, release_year FROM films WHERE release_year BETWEEN 1990 AND 2000 AND budget > 100000000 AND language = 'Spanish';
+
+SELECT title, release_year FROM films WHERE (release_year BETWEEN 1990 AND 2000) AND (budget > 100000000) AND (language = 'Spanish' OR language = 'French');
+
+```
+
+
+`WHERE IN`
+
+```{sql, eval =  FALSE}
+
+select title, release_year from films where release_year IN (2000,1990) AND
+duration > 120;
+
+select title, language from films where language IN ('English','Spanish','French');
+
+select certification, title from films where certification in ('R','NC-17');
+
+```
+
+
+`NULL and IS NULL`
+
+```{sql, eval = FALSE}
+
+select name from people where deathdate IS NULL;
+
+select title from films where budget is NULL;
+
+select count(*) from films where language is NULL;
+
+```
+
+### `LIKE and NOT LIKE`, with the concept of place holder; `%` & `_%`
+
+```{sql,eval = FALSE}
+
+select name from people where name like 'B%';
+select name from people where name like '_r%';
+select name from people where name not like 'A%';
+```
+
+
+## Aggregate Functions
+
+```{sql, eval = FALSE}
+
+select sum(duration) from films;
+select avg(duration) from films;
+select min(duration) from films;
+select max(duration) from films;
+
+select sum(gross) from films;
+select avg(gross) from films;
+select min(gross) from films;
+select max(gross) from films;
+
+
+```
+
+
+
+`Combining aggregate functions with WHERE`
+
+```{sql, eval = FALSE}
+
+select sum(gross) from films where release_year >= 2000;
+select avg(gross) from films where title like 'A%';
+select min(gross) from films where release_year = 1994;
+select max(gross) from films where release_year between 2000 and 2012;
+
+````
+
+
+## It's AS simple AS aliasing
+
+```{sql, eval = FALSE}
+
+select title, gross - budget as net_profit from films;
+select title, (duration/60.0) as duration_hours from films;
+select avg(duration/60.0) as avg_duration_hours from films;
+
+-- get the count(deathdate) and multiply by 100.0
+-- then divide by count(*)
+
+select count(deathdate)*100.0/count(*) as percentage_dead from people;
+select max(release_year) - min(release_year) as difference from films;
+
+SELECT (MAX(release_year) - MIN(release_year)) / 10.0
+AS number_of_decades
+FROM films;
+
+
+```
+
+
+## Sorting , Grouping and joins
+
+`order by`
+
+```{sql, eval = FALSE}
+
+select name from people order by name;
+
+select name from people order by birthdate;
+
+select birthdate, name from people order by birthdate;
+
+SELECT title FROM films WHERE release_year IN (2000, 2012) ORDER BY release_year;
+
+select * from films where release_year != 2015 order by duration;
+
+select title, gross from films where title like 'M%' order by title;
+
+select imdb_score, film_id from reviews order by imdb_score desc;
+select title from films order by title desc;
+select title, duration from films order by duration desc;
+
+select birthdate, name from people order by birthdate, name asc;
+select release_year, duration, title from films order by release_year, duration asc;
+
+select certification, release_year,title from films order by certification, release_year asc;
+select name, birthdate from people order by name, birthdate asc;
+
+
+````
+
+`Group by`
+
+```{sql, eval = FALSE}
+
+select release_year, count(*) from films group by release_year;
+select release_year, avg(duration) from films group by release_year;
+select release_year, max(budget) from films group by release_year;
+select imdb_score, count(*) from reviews group by imdb_score;
+
+```
+
+### Combining both group and order by to fetch the details
+
+```{sql,eval = FALSE}
+
+select release_year, min(gross) from films group by release_year;
+
+select language, sum(gross) from films group by language;
+
+select country, sum(budget) from films group by country;
+
+select release_year,country,max(budget) from films group by release_year, country order by release_year, country;
+
+SELECT country, release_year, MIN(gross)
+FROM films
+GROUP BY country, release_year
+ORDER BY country, release_year;
+
+select release_year, budget, gross from films;
+select release_year, budget, gross from films where release_year > 1990;
+select release_year from films where release_year > 1990 group by release_year;
+select release_year, avg(budget) as avg_budget, avg(gross) as avg_gross from films where release_year > 1990 group by release_year;
+SELECT release_year, AVG(budget) AS avg_budget, AVG(gross) AS avg_gross
+FROM films
+WHERE release_year > 1990
+GROUP BY release_year
+HAVING AVG(budget) > 60000000;
+
+-- Putting it all togetther
+
+select country, avg(budget) avg_budget, avg(gross) as avg_gross from films group by country having count(title) > 10 order by country limit  5;
+
+```
+
+
