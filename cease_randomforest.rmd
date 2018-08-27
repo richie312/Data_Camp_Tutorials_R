@@ -1,0 +1,346 @@
+
+# <span style="color:#1A5276">Predictive Analytics_Random Forest</span>
+
+## <span style="color:#9CAFF0">Data PreProcessing</span>
+
+We are introducing the Random Forest classification technique to predict the probabilities for Cease and no Cease. In this section we will train the machine on Random Forest algorithm to predict the outcome. Secondly, we'll also tune the hyperparameter with different package like `` Caret ``, ``randomForest`` in order to optimised the arguments for randomforest and to get best model for the dataset.
+
+Lastly, we will evaluate the model on the basis of AUC, ROC and confusion matrix. Lets proceed with data modelling step by step.
+
+## <span style="color:#9CAFF0">Data Pre-Processing</span>
+
+Total observation for the dataset is over 3,00,000. The machine capability to allocate the temporary space for the computation is less than 180 mb.
+
+Thus, we will select a sample of 23,000 (based on the capability of the machine) from the entire dataset. In order to do that we will use the round function from the base package of R in order to shuffle the data set and then split the data into train and test. 
+
+* <span style="color:#AED52A">"The total number of observation in main dataset**(Population)** is 332284".</span>
+* <span style="color:#AED52A"> "The total number of observation**(sample size)** of training set is 18608"</span>
+* <span style="color:#AED52A"> "The total number of observation in the testing set is 4652".</span> 
+
+The testing set is holdout for validation. This will be completely unseen dataset for the model. The model will be trained on the training set, then it will be evaluated on the  testing set based on *"Accuracy" metric*.
+
+
+```{r, message=FALSE,warning=FALSE,echo=FALSE}
+## library
+
+  source("functions.R")
+  library(caret)
+  library(randomForest)
+  library(gbm)
+  library(plyr)
+  library(dplyr)
+  library(ggplot2)
+  library(ROCR)
+  library(ModelMetrics)
+  library(kableExtra)
+# Set the working directory 
+setwd("C:/Users/AChatterjee/OHC")
+
+## Read the cease 2018 data
+
+cease_df<-read.csv("cease_2018.csv")
+
+
+# Examine the dataset
+
+#names(cease_df)
+#nrow(cease_df)
+
+## Remove the "-" sign from the numeric columns
+
+cease_df$SumOfAmt.in.EUR<-gsub("[-]","",cease_df$SumOfAmt.in.EUR)
+## Variable Drop
+
+drop_variable<-c("Country","SumOfAmt.in.LC","DIVISION","LOB_1","Month.Start.Date","Rate","Amt.in.CC",
+                 "Parent.OCN","Parent.Account","OCN","Customer.Name")
+
+
+cease_df1<-cease_df[,!names(cease_df)%in%drop_variable]
+
+## Convert the euro amount into numeric
+
+cease_df1$SumOfAmt.in.EUR<-as.numeric(cease_df1$SumOfAmt.in.EUR)
+
+## Missing values
+cease_df1$SumOfAmt.in.EUR<-replace(cease_df1$SumOfAmt.in.EUR, is.na(cease_df1$SumOfAmt.in.EUR),0)
+
+
+### take sample size of 20000 from the entire dataset
+
+set.seed(1234)
+
+n <- nrow(cease_df1)
+shuffled <- cease_df1[sample(n),]
+
+cease_df1<-shuffled[1:round(n*0.07),]
+
+
+## Convert the dataset into numerics
+
+#cease_df1[,1:9]<-as.data.frame(lapply(cease_df1[,1:9], as.numeric))
+
+## Split the dataset into training and test set.
+
+train<-get_dataset(cease_df1,split_ratio=0.8,set='train')
+
+test<-get_dataset(cease_df1,split_ratio=0.8,set="test")
+
+# Check the number of rows in train and test sets
+#print(paste0("The total number of observation in main dataset(Population) is ",nrow(cease_df),sep=""))
+#print(paste0("The total number of observation(sample size) in the training set is ",nrow(train),sep=""))
+#print(paste0("The total number of observation in the testing set is ",nrow(test),sep=""))
+
+```
+
+### <span style="color:#9CAFF0">Variable Importance, OOB Error Plot</span>
+
+```{r, echo=FALSE,message=FALSE,warning=FALSE}
+
+## Apply the model on the dataset
+
+RF<- randomForest(formula = train$Cease~., 
+                  data = train,
+                  mtry=sqrt(ncol(train)),
+                  ntree = 300,
+                  cv.fold= 0)
+
+## Plots
+par(mfrow=c(1,2),bg="#EADFEE",lwd=2,lty=4,cex.main=1,cex.axis=0.7)
+plot(RF, ylim=c(0.9,1),xlim=c(0,150),main="Yes Class Error vs trees",col.main="#6C550E")
+legend(x = "bottomlef",
+       legend = colnames(RF$err.rate),
+       fill = 1:ncol(RF$err.rate))
+plot(RF,ylim=c(0,0.04),xlim=c(0,150),main="No Class & OOB Error vs trees",col.main="#6C550E")
+
+## Key Variable
+par(mfrow=c(1,1))
+  varImpPlot(RF,main="Variable Importance",col.main="#4F6E1A",col="#77A920",
+             col.lab="brown",cex.main=1.3,cex.axis=1.2,cex.lab=1.5,lwd=2)
+
+```
+
+The error does not reduces by significant amount after 40 number of trees. This is mainly due to less number of variables and number of observation.
+
+
+### <span style="color:#9CAFF0">Partial Plot wrt to TOP 4 Features for "Yes" Class</span>
+
+The plots show the relative logit contribution of the variable on the class probability from the perspective of the model. In other words *negative values (in the y-axis)*k mean that the positive class is less likely for that value of the *independent variable (x-axis)*. Similarly positive values mean that the positive class is more likely for that value of the independent variable according to the model. Clearly, zero implies no average impact on class probability according to the model.
+
+Below equation shows the y-axis function;
+
+$$f(y)=\log_{p_k}\left(y\right)-\frac{1}{K}\sum_{j=1}^k\log_{p_j}\left(y\right)$$
+
+where *K* is the number of classes, *k* is which.class (the exact class; "Yes" or "No"), and $p_j$ is the proportion of votes for class *j*
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+## Partial Plot wrt to TOP 4 Features for "Yes" Class
+
+par(mfrow=c(2,2),bg="#73ECA8")
+partialPlot(RF,train,SumOfAmt.in.EUR,"Yes",main="Dependence on SumofAmount",xlab = "Amount")
+partialPlot(RF,train,Top.100,"Yes", main= "Dependence on Customer Segmentation",xlab="Segmentation")
+partialPlot(RF,train,Channel.New,"Yes",main="Dependence on Channel(New)",xlab="Channel")
+partialPlot(RF,train,Channel.Region,"Yes",main="Dependence on Region",xlab="Region")
+
+```
+
+####<span style="color:#F9940">Insights</span>
+
+* **Sum of Amount**: It is clear that when sum of amount is around $200 or $900-1000, it has mild influence on **"Yes"** class.
+* **Customer Segmentation**: It does not have any direct impact on Cease.
+* **Channel**: Channel does not have any impact on *"Yes"* class.
+* **Region**: Region does not have any impact on *"Yes"* class.
+
+### <span style="color:#9CAFF0">Partial Plot wrt to TOP 4 Features for "No" Class</span>
+
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+
+## Partial Plot wrt to TOP 4 Features for "No" Class
+
+par(mfrow=c(2,2),bg="#D0F393")
+partialPlot(RF,train,SumOfAmt.in.EUR,"No",main="Dependence on SumofAmount",xlab = "Amount")
+partialPlot(RF,train,Top.100,"No", main= "Dependence on Customer Segmentation",xlab="Segmentation")
+partialPlot(RF,train,Channel.New,"No",main="Dependence on Channel(New)",xlab="Channel")
+partialPlot(RF,train,Channel.Region,"No",main="Dependence on Region",xlab="Region")
+
+```
+
+* **Sum of Amount**: It is clear that when sum of amount is around **$200 or $900-1000**, the customers are less likely to cease.
+* **Customer Segmentation**: Customer from the the category of **Top 200-250** re less likely to Cease.
+* **Channel**: Customer which are acquired from Capital market channel are less likely to Cease.
+* **Region**: Customer from regions like **ENT-DACH** are less likey to leave. It is also evident from the plot the category like **People** has less influence on "Yes" class.
+
+### <span style="color:#9CAFF0">Frequency of Variable used in RF Model</span>
+
+
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+
+## Barplot of variable used in trees
+
+var_freq<-as.data.frame(varUsed(RF))
+colnames(var_freq)<-c("Frequency")
+
+
+var_freq_hist<-cbind(var_freq,names(train[,1:9]))
+colnames(var_freq_hist)<-c("Frequency","Variables")
+
+var_freq_hist$Variables<-c("Amount","Channel","Region","Region(N)","Channel(N)","Segment","Region(2018)",
+                           "2018(Transfers)","Top100")
+
+var_freq_hist<-var_freq_hist%>%arrange(desc(var_freq_hist$Frequency))
+var_freq_hist <- transform(var_freq_hist, variables = reorder(Variables, Frequency, decreasing = T))
+
+ggplot(var_freq_hist, aes(x = var_freq_hist$Variables,y=var_freq_hist$Frequency)) + 
+  geom_bar(aes(fill=as.factor(var_freq_hist$Variables),width=0.5),stat="identity") +
+  xlab("Variables")+
+  ylab("Frequency of Variables used in RF Model")+
+  coord_flip()+
+  theme_bw() + 
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),axis.line = element_line(colour = "black"),legend.position = 'none')
+
+```
+
+It is clear from the plot and partial plots, that variables like `sum of amount`,`Region(2018)` & `Top100` have been used numerous times to conclude whether or not customer will cease or not? This model heavily depends on the above three variable to make its decision.
+
+
+### <span style="color:#9CAFF0">Prediction on Test Set</span>
+
+Below is short table for prediction list for both the classes "Yes" and "No". As this dataset has unbalanced class of Yes and No. The most of the prediction is for the "No" class with high probability.The highest probabilty for Yes class is in the range of 0.6.
+
+```{r, echo=FALSE,message=FALSE,warning=FALSE}
+
+### Predict it on the test set
+
+predict_result<-predict(object=RF,
+                 newdata = test,type='class')
+
+
+## Prediction with Probabilities
+
+predict_prob<-predict(RF,newdata=test,type='prob')
+
+#kable(head(predict_prob))
+
+kable(head(predict_prob)) %>%
+  kable_styling("striped", full_width = F,position = "left") %>%
+  column_spec(1:ncol(predict_prob)+1, bold = T) %>%
+  row_spec(1:6, bold = T, background  = "#F4F6F6")
+
+```
+
+### <span style="color:#9CAFF0">Area Under the Curve</span>
+
+<span style="color:##D35400">**The area under the curve is 0.83**</span>
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE,eval= FALSE}
+
+## AUC
+
+score<-auc(actual = test$Cease,
+           predicted = predict_prob[,"Yes"])
+
+print(paste0("The AUC score is ",score,sep=""))
+
+```
+
+### <span style="color:#9CAFF0">ROC Plot</span>
+
+```{r, echo=FALSE,message=FALSE,warning=FALSE}
+
+## ROC
+
+pred<-prediction(predict_prob[,"Yes"], test[,10])
+par(bg = "#D1F2EB")
+roc<-performance(pred,"tpr","fpr")
+plot(roc, main = "Test Set ROC Curves",col = "green", xlab="TPR",ylab="FPR")
+
+
+```
+
+
+
+### <span style="color:#9CAFF0">Confusion Matrix</span>
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+pred<-factor(ifelse(predict_prob[,"Yes"]>0.7,"Yes","No"))
+pred<-relevel(pred,"No","Yes")
+
+cm = caret::confusionMatrix(reference = test[,10] ,
+                            data = pred)
+#cm
+
+
+par(bg="#E9F7EF")
+
+fourfold_table<-as.table(as.matrix(cm$table))
+fourfoldplot(fourfold_table, color = c("#CC6666", "#99CC99"),
+             conf.level = 0, margin = 1, main = "Confusion Matrix")
+
+### PLot the other associated result
+
+##ADD in the byClass result
+par(bg="#EAFAF1")
+plot(c(100,0),c(100,0), type = "n", xlab="",ylab="", main ="Details",xaxt='n',yaxt='n')
+text(10, 85, names(cm$byClass[1]), cex=1.2, font=2)
+text(10, 70, round(as.numeric(cm$byClass[1]), 3), cex=1.2)
+text(30, 85, names(cm$byClass[2]), cex=1.2, font=2)
+text(30, 70, round(as.numeric(cm$byClass[2]), 3), cex=1.2)
+text(50, 85, names(cm$byClass[5]), cex=1.2, font=2)
+text(50, 70, round(as.numeric(cm$byClass[5]), 3), cex=1.2)
+text(70, 85, names(cm$byClass[6]), cex=1.2, font=2)
+text(70, 70, round(as.numeric(cm$byClass[6]), 3), cex=1.2)
+text(90, 85, names(cm$byClass[7]), cex=1.2, font=2)
+text(90, 70, round(as.numeric(cm$byClass[7]), 3), cex=1.2)
+
+## Add in the overall result
+
+text(30, 35, names(cm$overall[1]), cex=1.5, font=2)
+text(30, 20, round(as.numeric(cm$overall[1]), 3), cex=1.4)
+text(70, 35, names(cm$overall[2]), cex=1.5, font=2)
+text(70, 20, round(as.numeric(cm$overall[2]), 3), cex=1.4)  
+
+
+
+```
+
+### <span style="color:#9CAFF0">Hyperparameter Tuning with mtry</span>
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE,eval=FALSE}
+
+# Hyperparameter Tuning with mtry
+
+mtry_num<-round(sqrt(ncol(train)),digits = 0)
+
+a=matrix(ncol=2,nrow=9)
+
+for (i in seq(1:9)){
+  RF2 <- randomForest(Cease ~ ., data = train, ntree = 300, mtry = 9, importance = TRUE)
+  predict_probability<-predict(RF2,newdata=test,type="prob")
+  AUC<-auc(actual = test$Cease,
+         predicted = predict_probability[,"Yes"])
+  a[i,]<-c(i,AUC)
+  plot(a,xlab="mtry",ylab="AUC",ylim=c(0.84,0.87),xlim=c(0,10),type="b",
+       main="AUC vs mtry",col="#090480")
+  
+}
+
+colnames(a)<-c("mtry","AUC")
+a<-as.data.frame(a)
+
+
+
+```
+
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+
+print("The optimal number of variable wrt maximum AUC is 5.")
+```
+<div style="width:400px; height:500px">
+![](C:/Users/AChatterjee/OHC/AUC_vs_mtry.png)
+``
+
+
+
